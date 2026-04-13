@@ -1,0 +1,202 @@
+﻿<Window x:Class="Com.Scm.Upgrade.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Scm.Net 更新"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Height="320" Width="480">
+    <Window.Resources>
+        <!-- 现代风格按钮样式 -->
+        <Style x:Key="ModernButtonStyle" TargetType="Button">
+            <!-- 基础属性 -->
+            <Setter Property="Width" Value="100"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+
+            <!-- 模板定义 -->
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <!-- 按钮背景（带渐变+圆角+阴影） -->
+                            <Border x:Name="ButtonBorder"
+                                CornerRadius="8"
+                                Background="{TemplateBinding Background}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                BorderBrush="{TemplateBinding BorderBrush}">
+                                <!-- 阴影效果 -->
+                                <Border.Effect>
+                                    <DropShadowEffect x:Name="ButtonShadow"
+                                                  BlurRadius="6"
+                                                  ShadowDepth="2"
+                                                  Opacity="0.3"
+                                                  Color="#333333"/>
+                                </Border.Effect>
+                            </Border>
+
+                            <!-- 内容容器（居中显示） -->
+                            <ContentPresenter x:Name="ContentPresenter"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          Margin="{TemplateBinding Padding}"
+                                          Content="{TemplateBinding Content}"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Grid>
+
+                        <!-- 状态触发器 -->
+                        <ControlTemplate.Triggers>
+                            <!-- 悬停状态 -->
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#3B91E8" Offset="0"/>
+                                            <GradientStop Color="#2574C7" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+
+                            <!-- 按下状态 -->
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#1E62A8" Offset="0"/>
+                                            <GradientStop Color="#154B85" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="ContentPresenter" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform Y="1"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+
+                            <!-- 禁用状态 -->
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Background">
+                                    <Setter.Value>
+                                        <SolidColorBrush Color="#CCCCCC"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="Foreground" Value="#888888"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+
+            <!-- 不同主题的样式变体（可选） -->
+            <Style.Triggers>
+                <!-- 次要按钮变体 -->
+                <Trigger Property="Tag" Value="Secondary">
+                    <Setter Property="Foreground" Value="#333333"/>
+                    <Setter Property="Background" >
+                        <Setter.Value>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#F5F5F5" Offset="0"/>
+                                <GradientStop Color="#E8E8E8" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background">
+                        <Setter.Value>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#FFFFFF" Offset="0"/>
+                                <GradientStop Color="#F0F0F0" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+
+                <!-- 危险按钮变体 -->
+                <Trigger Property="Tag" Value="Danger">
+                    <Setter Property="Background">
+                        <Setter.Value>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#E53935" Offset="0"/>
+                                <GradientStop Color="#C62828" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background">
+                        <Setter.Value>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#F44336" Offset="0"/>
+                                <GradientStop Color="#D32F2F" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="Width" Value="70"/>
+            <Setter Property="Height" Value="27"/>
+            <Setter Property="Background" Value="#43a9c7"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#FAFAFA"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5"
+                                SnapsToDevicePixels="True">
+                            <TextBlock Text="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter Property="Background" TargetName="border" Value="#409EFF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="true">
+                                <Setter Property="Background" TargetName="border" Value="#003a8c"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="#003a8c"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBox x:Name="TbInfo"
+                 TextWrapping="Wrap"
+                 AcceptsReturn="True"
+                 AcceptsTab="True"
+                 IsReadOnly="True"
+                 VerticalScrollBarVisibility="Auto"
+                 Text="{Binding Info}"
+                 Margin="6"/>
+        <TextBlock x:Name="TbStatus" Grid.Row="1" Text="{Binding Status}" Margin="6"/>
+        <ProgressBar x:Name="PbInfo" Grid.Row="2" Value="{Binding Ratio}" Maximum="100" Margin="6"/>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center">
+            <Button x:Name="BtStart" Click="BtStart_Click" Margin="6" Background="Green" Style="{DynamicResource ModernButtonStyle}">开始</Button>
+            <Button x:Name="BtPause" Click="BtPause_Click" Margin="6" Background="Orange" Style="{DynamicResource ModernButtonStyle}">暂停</Button>
+            <Button x:Name="BtCancel" Click="BtCancel_Click" Margin="6" Background="Gray" Style="{DynamicResource ModernButtonStyle}">取消</Button>
+        </StackPanel>
+    </Grid>
+</Window>
