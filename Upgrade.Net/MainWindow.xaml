@@ -4,10 +4,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Scm.Net 更新"
+        Title="Upgrade.Net 更新"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Height="320" Width="480">
+        Height="360" Width="480">
     <Window.Resources>
         <!-- 现代风格按钮样式 -->
         <Style x:Key="ModernButtonStyle" TargetType="Button">
@@ -178,24 +178,35 @@
     </Window.Resources>
     <Grid Margin="12">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <TextBox x:Name="TbInfo"
-                 TextWrapping="Wrap"
-                 AcceptsReturn="True"
-                 AcceptsTab="True"
-                 IsReadOnly="True"
-                 VerticalScrollBarVisibility="Auto"
-                 Text="{Binding Info}"
-                 Margin="6"/>
-        <TextBlock x:Name="TbStatus" Grid.Row="1" Text="{Binding Status}" Margin="6"/>
-        <ProgressBar x:Name="PbInfo" Grid.Row="2" Value="{Binding Ratio}" Maximum="100" Margin="6"/>
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center">
-            <Button x:Name="BtStart" Click="BtStart_Click" Margin="6" Background="Green" Style="{DynamicResource ModernButtonStyle}">开始</Button>
-            <Button x:Name="BtPause" Click="BtPause_Click" Margin="6" Background="Orange" Style="{DynamicResource ModernButtonStyle}">暂停</Button>
+        <TextBlock
+            x:Name="TbTitle"
+            Grid.Row="0"
+            MaxHeight="80"
+            Visibility="Collapsed"
+            ScrollViewer.VerticalScrollBarVisibility="Auto"
+            Text="{Binding Content}"
+            Margin="6"/>
+        <TextBox
+            x:Name="TbInfo"
+            Grid.Row="1"
+            TextWrapping="Wrap"
+            AcceptsReturn="True"
+            AcceptsTab="True"
+            IsReadOnly="True"
+            VerticalScrollBarVisibility="Auto"
+            Text="{Binding Info}"
+            Margin="6"/>
+        <TextBlock x:Name="TbStatus" Grid.Row="2" Text="{Binding Status}" Margin="6"/>
+        <ProgressBar x:Name="PbInfo" Grid.Row="3" Value="{Binding Ratio}" Maximum="100" Margin="6"/>
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center">
+            <Button x:Name="BtStart" Click="BtStart_Click" Margin="6" Background="Green" IsEnabled="{Binding Enabled}" Style="{DynamicResource ModernButtonStyle}">开始</Button>
+            <Button x:Name="BtPause" Click="BtPause_Click" Margin="6" Background="Orange" IsEnabled="{Binding Enabled}" Style="{DynamicResource ModernButtonStyle}">暂停</Button>
             <Button x:Name="BtCancel" Click="BtCancel_Click" Margin="6" Background="Gray" Style="{DynamicResource ModernButtonStyle}">取消</Button>
         </StackPanel>
     </Grid>

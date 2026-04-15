@@ -4,47 +4,21 @@ namespace Com.Scm.Upgrade.Dvo
 {
     public class MainWindowDvo : INotifyPropertyChanged
     {
+        private string content;
+        public string Content { get { return content; } set { content = value; OnPropertyChanged(nameof(content)); } }
+
         private string info;
-        public string Info
-        {
-            get
-            {
-                return info;
-            }
-            set
-            {
-                info = value;
-                OnPropertyChanged(nameof(Info));
-            }
-        }
+        public string Info { get { return info; } set { info = value; OnPropertyChanged(nameof(Info)); } }
 
         private string status;
-        public string Status
-        {
-            get
-            {
-                return status;
-            }
-            set
-            {
-                status = value;
-                OnPropertyChanged(nameof(Status));
-            }
-        }
+        public string Status { get { return status; } set { status = value; OnPropertyChanged(nameof(Status)); } }
 
         private double ratio;
-        public double Ratio
-        {
-            get
-            {
-                return ratio;
-            }
-            set
-            {
-                ratio = value;
-                OnPropertyChanged(nameof(Ratio));
-            }
-        }
+        public double Ratio { get { return ratio; } set { ratio = value; OnPropertyChanged(nameof(Ratio)); } }
+
+
+        private bool enabled;
+        public bool Enabled { get { return enabled; } set { enabled = value; OnPropertyChanged(nameof(Enabled)); } }
 
         public event PropertyChangedEventHandler PropertyChanged;
 

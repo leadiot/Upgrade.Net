@@ -60,21 +60,33 @@ namespace Com.Scm.Upgrade
         {
             _AppConfig = appConfig;
 
+            _Dvo = new MainWindowDvo();
+
             if (!string.IsNullOrEmpty(_AppConfig.Title))
             {
                 this.Title = _AppConfig.Title;
             }
 
-            _Dvo = new MainWindowDvo();
-
+            if (appConfig.AppInfo != null)
+            {
+                //_Dvo.AppName = appConfig.AppInfo.name;
+                _Dvo.Content = appConfig.AppInfo.content;
+            }
+            if (appConfig.VerInfo == null)
+            {
+                _Dvo.Info = "版本信息为空！";
+                return;
+            }
             _Dvo.Info = appConfig.VerInfo.remark;
-            //TbVersion.Text = $"版本号: {verInfo.Version}  发布日期: {verInfo.ReleaseDate}";
-            _Dvo.Status = "准备下载...";
 
             if (string.IsNullOrEmpty(_AppConfig.InstallPath))
             {
                 _AppConfig.InstallPath = AppDomain.CurrentDomain.BaseDirectory;
             }
+
+            //TbVersion.Text = $"版本号: {verInfo.Version}  发布日期: {verInfo.ReleaseDate}";
+            _Dvo.Enabled = true;
+            _Dvo.Status = "准备下载...";
 
             this.DataContext = _Dvo;
 

@@ -9,7 +9,7 @@ namespace Com.Scm.Upgrade.Config
         /// <summary>
         /// 配置文件
         /// </summary>
-        public const string CONFIG_FILE = "Scm.Upgrade.json";
+        public const string CONFIG_FILE = "Upgrade.Net.json";
 
         /// <summary>
         /// 应用标题
@@ -55,8 +55,8 @@ namespace Com.Scm.Upgrade.Config
         {
             Title = "Nas.Net更新";
 
-            VerInfo.ver = "1.0.0";
-            VerInfo.date = "2024-01-01";
+            VerInfo.ver_info = "1.0.0";
+            VerInfo.ver_date = "2024-01-01";
             VerInfo.remark = "这是版本更新说明！";
             VerInfo.url = "";
 
