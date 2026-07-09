@@ -1,3 +1,4 @@
 <Solution>
-  <Project Path="Upgrade.Net/Upgrade.Net.csproj" />
+  <Project Path="Upgrade.Net/Upgrade.Net.csproj" Id="09df079b-ba22-49ee-af6b-a676abe9fd4c" />
+  <Project Path="Upgrade.Wpf/Upgrade.Wpf.csproj" />
 </Solution>

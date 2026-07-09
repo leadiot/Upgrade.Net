@@ -1,8 +1,17 @@
 ﻿################################################################################
 # 此 .gitignore 文件已由 Microsoft(R) Visual Studio 自动创建。
 ################################################################################
-# Visual Studio项目文件
+
+# IDE相关文件
+.git/
+.gitcode/
+.gitee/
+.github/
+.qoder/
 .vs/
+.vscode/
+
+# Visual Studio项目文件
 [Bb]in/
 [Oo]bj/
 [Ll]ogs/
