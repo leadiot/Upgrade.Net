@@ -35,11 +35,11 @@
     </Window.Resources>
     <Grid Margin="0">
         <Grid.RowDefinitions>
-            <RowDefinition Height="0"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="60"/>
-            <RowDefinition Height="80"/>
-        </Grid.RowDefinitions>
+                <RowDefinition Height="0"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="60"/>
+                <RowDefinition Height="80"/>
+            </Grid.RowDefinitions>
 
         <Border Grid.Row="0" Background="{StaticResource BgSecondary}" CornerRadius="0">
             <Grid>

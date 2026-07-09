@@ -10,13 +10,15 @@ namespace Com.Scm.Upgrade
 {
     public partial class MainWindow : Window
     {
+        public const int MAJOR = 1;
+        public const int MINOR = 0;
+        public const int PATCH = 0;
+        public const int BUILD = 1;
+
         private MainWindowDvo _Dvo;
         private UpgradeConfig _AppConfig;
-        private static readonly HttpClient _httpClient = new HttpClient
-        {
-            Timeout = TimeSpan.FromMinutes(30)
-        };
         private CancellationTokenSource _Token;
+
         private bool _Paused;
         private long _DownloadedBytes;
         private long _TotalBytes;
@@ -225,7 +227,11 @@ namespace Com.Scm.Upgrade
         {
             var tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".zip");
 
-            using (var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, _Token.Token))
+            var httpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromMinutes(30)
+            };
+            using (var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, _Token.Token))
             {
                 response.EnsureSuccessStatusCode();
 
@@ -507,7 +513,6 @@ namespace Com.Scm.Upgrade
         protected override void OnClosed(EventArgs e)
         {
             _Token?.Cancel();
-            _httpClient.Dispose();
             base.OnClosed(e);
         }
     }
