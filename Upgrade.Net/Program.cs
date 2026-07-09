@@ -6,7 +6,7 @@ namespace Com.Scm.Upgrade
         {
             try
             {
-                var _ = new Upgrade().StartAsync();
+                new Upgrade().Start();
             }
             catch (Exception ex)
             {

@@ -1,11 +1,12 @@
 ﻿using Com.Scm.Upgrade.Config;
 using System.IO.Compression;
+using System.Net.Http;
 
 namespace Com.Scm.Upgrade
 {
     public class Upgrade
     {
-        public async Task StartAsync()
+        public void Start()
         {
             Log("=== 开始升级任务 ===");
 
@@ -33,11 +34,11 @@ namespace Com.Scm.Upgrade
             Log("   安装目录创建成功");
 
             Log("4. 下载更新文件...");
-            var tempFilePath = await DownloadFileAsync(config.VerInfo.url);
+            var tempFilePath = DownloadFile(config.VerInfo.url);
             Log($"   文件下载成功: {tempFilePath}");
 
             Log("5. 备份现有文件...");
-            BackupFiles(config.InstallPath, config.BackupPath, config.AutoBackup);
+            BackupFiles(config.InstallPath, config.BackupPath, config.AutoBackup, config.IgnoreFiles);
 
             try
             {
@@ -73,24 +74,24 @@ namespace Com.Scm.Upgrade
             return true;
         }
 
-        private async Task<string> DownloadFileAsync(string url)
+        private string DownloadFile(string url)
         {
             var tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".zip");
             using (var httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(30) })
             {
-                var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+                var response = httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult();
                 response.EnsureSuccessStatusCode();
 
                 var totalBytes = response.Content.Headers.ContentLength ?? -1;
-                using (var stream = await response.Content.ReadAsStreamAsync())
+                using (var stream = response.Content.ReadAsStreamAsync().GetAwaiter().GetResult())
                 using (var fileStream = File.Create(tempFilePath))
                 {
                     var buffer = new byte[81920];
                     long totalRead = 0;
                     int bytesRead;
-                    while ((bytesRead = await stream.ReadAsync(buffer)) > 0)
+                    while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
                     {
-                        await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
+                        fileStream.Write(buffer, 0, bytesRead);
                         totalRead += bytesRead;
                         if (totalBytes > 0)
                         {
@@ -121,7 +122,7 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private void BackupFiles(string installPath, string backupPath, bool autoBackup)
+        private void BackupFiles(string installPath, string backupPath, bool autoBackup, List<string> ignoreFiles = null)
         {
             if (!autoBackup)
             {
@@ -148,7 +149,47 @@ namespace Com.Scm.Upgrade
                 var backupFileName = $"backup_{timestamp}.zip";
                 var backupFilePath = Path.Combine(backupPath, backupFileName);
 
-                ZipFile.CreateFromDirectory(installPath, backupFilePath, CompressionLevel.Optimal, false);
+                var allFiles = Directory.GetFiles(installPath, "*", SearchOption.AllDirectories);
+                var totalFiles = allFiles.Length;
+                var processedFiles = 0;
+
+                if (totalFiles == 0)
+                {
+                    Log("   安装目录为空，跳过备份步骤");
+                    return;
+                }
+
+                Log($"   准备备份 {totalFiles} 个文件...");
+
+                using (var zipStream = File.Create(backupFilePath))
+                using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
+                {
+                    foreach (var filePath in allFiles)
+                    {
+                        var relativePath = Path.GetRelativePath(installPath, filePath);
+
+                        if (ignoreFiles != null && ignoreFiles.Any(ignore => relativePath.Contains(ignore, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            processedFiles++;
+                            continue;
+                        }
+
+                        try
+                        {
+                            archive.CreateEntryFromFile(filePath, relativePath, CompressionLevel.Optimal);
+                        }
+                        catch (IOException ex)
+                        {
+                            Log($"   跳过锁定文件: {relativePath} ({ex.Message})");
+                        }
+
+                        processedFiles++;
+                        var progress = (int)((processedFiles * 100) / totalFiles);
+                        Console.Write($"\r   备份进度: {processedFiles}/{totalFiles} ({progress}%)");
+                    }
+                }
+
+                Console.WriteLine();
                 Log($"   备份成功: {backupFilePath}");
             }
             catch (Exception ex)
