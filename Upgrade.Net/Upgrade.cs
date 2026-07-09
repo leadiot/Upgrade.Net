@@ -89,6 +89,8 @@ namespace Com.Scm.Upgrade
                 }
             }
 
+            var file = CopyOffline(config.InstallPath, config.Offline);
+
             Log("[步骤5/8] 备份现有文件...");
             var backupResult = BackupFiles(config.InstallPath, config.Backup);
             if (backupResult.Success)
@@ -113,6 +115,8 @@ namespace Com.Scm.Upgrade
                     Log($"         └─ {skippedFile}");
                 }
             }
+
+            DeleteOffline(file);
 
             Log("[步骤7/8] 清理临时文件...");
             if (isDownloaded)
@@ -380,6 +384,45 @@ namespace Com.Scm.Upgrade
             else
             {
                 Log($"   [警告] 执行文件不存在: {executePath}");
+            }
+        }
+
+        private string CopyOffline(string installPath, OfflineConfig config)
+        {
+            if (config == null)
+            {
+                return null;
+            }
+
+            var file = config.File;
+            if (string.IsNullOrEmpty(file) || !File.Exists(file))
+            {
+                Log("   [信息] 离线文件不存在，跳过离线文件复制步骤");
+                return null;
+            }
+
+            var name = Path.GetFileName(file);
+            var dstFile = Path.Combine(installPath, name);
+            File.Copy(file, dstFile, true);
+
+            Thread.Sleep(10000);
+
+            return dstFile;
+        }
+
+        private void DeleteOffline(string file)
+        {
+            if (!string.IsNullOrEmpty(file) && File.Exists(file))
+            {
+                try
+                {
+                    File.Delete(file);
+                    Log($"   [成功] 删除离线文件: {file}");
+                }
+                catch (Exception ex)
+                {
+                    Log($"   [警告] 删除离线文件失败: {ex.Message}");
+                }
             }
         }
 

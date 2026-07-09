@@ -16,6 +16,11 @@ namespace Com.Scm.Upgrade.Config
         public string Title { get; set; }
 
         /// <summary>
+        /// 是否自动关闭原程序
+        /// </summary>
+        public bool AutoClose { get; set; }
+
+        /// <summary>
         /// 安装路径
         /// </summary>
         public string InstallPath { get; set; }
@@ -29,6 +34,11 @@ namespace Com.Scm.Upgrade.Config
         /// 安装zip包路径
         /// </summary>
         public string InstallFile { get; set; }
+
+        /// <summary>
+        /// 离线文件路径
+        /// </summary>
+        public OfflineConfig Offline { get; set; }
 
         /// <summary>
         /// 重启参数
@@ -49,11 +59,6 @@ namespace Com.Scm.Upgrade.Config
         /// 版本信息
         /// </summary>
         public ScmVerInfo VerInfo { get; set; } = new ScmVerInfo();
-
-        /// <summary>
-        /// 是否自动关闭原程序
-        /// </summary>
-        public bool AutoClose { get; set; }
 
         /// <summary>
         /// 忽略文件列表
@@ -113,6 +118,18 @@ namespace Com.Scm.Upgrade.Config
         /// 备份文件路径
         /// </summary>
         public string Path { get; set; }
+    }
+
+    public class OfflineConfig
+    {
+        /// <summary>
+        /// 离线展示文件
+        /// </summary>
+        public string File { get; set; }
+        /// <summary>
+        /// 服务离线时间，单位秒
+        /// </summary>
+        public int Time { get; set; }
     }
 
     public enum InstallType

@@ -273,18 +273,18 @@ namespace Com.Scm.Upgrade
         /// <summary>
         /// 格式化文件大小（字节转KB/MB/GB）
         /// </summary>
-        /// <param name="bytes"></param>
+        /// <param name="size"></param>
         /// <returns></returns>
-        private string FormatFileSize(long bytes)
+        private string FormatFileSize(long size)
         {
-            if (bytes < 1024)
-                return $"{bytes} B";
-            else if (bytes < 1024 * 1024)
-                return $"{bytes / 1024.0:0.00} KB";
-            else if (bytes < 1024 * 1024 * 1024)
-                return $"{bytes / (1024.0 * 1024):0.00} MB";
-            else
-                return $"{bytes / (1024.0 * 1024 * 1024):0.00} GB";
+            var units = new string[] { "B", "KB", "MB", "GB", "TB", "PB" };
+            int i = 0;
+            while (size > 1024)
+            {
+                size = size >> 10;
+                i++;
+            }
+            return size + units[i];
         }
 
         /// <summary>
