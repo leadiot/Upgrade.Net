@@ -53,7 +53,7 @@ namespace Com.Scm.Upgrade.Config
 
         public void LoadDefault()
         {
-            Title = "Nas.Net更新";
+            Title = "Upgrade.Wpf更新";
 
             VerInfo.ver_info = "1.0.0";
             VerInfo.ver_date = "2024-01-01";

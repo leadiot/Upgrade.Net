@@ -7,98 +7,159 @@ namespace Com.Scm.Upgrade
     {
         public void Start()
         {
-            Log("=== 开始升级任务 ===");
+            Log("═══════════════════════════════════════════════");
+            Log("            应用升级程序 v1.0");
+            Log("═══════════════════════════════════════════════");
+            Log("");
 
-            Log("1. 读取配置文件...");
+            Log("[步骤1/8] 读取配置文件...");
             var config = UpgradeConfig.Load();
             if (config == null)
             {
-                Log("   配置文件不存在，结束升级任务");
+                Log("   [错误] 配置文件 upgrade.json 不存在，结束升级任务");
                 return;
             }
-            Log("   配置文件读取成功");
+            Log("   [成功] 配置文件读取成功");
 
-            Log("2. 验证配置信息...");
+            Log("[步骤2/8] 验证配置信息...");
             if (!ValidateConfig(config))
             {
                 return;
             }
-            Log("   配置信息验证通过");
-            Log($"   版本: {config.VerInfo.ver_info}");
-            Log($"   下载地址: {config.VerInfo.url}");
-            Log($"   安装路径: {config.InstallPath}");
+            Log("   [成功] 配置信息验证通过");
+            Log($"   ├─ 目标版本： {config.VerInfo.ver_info}");
+            Log($"   ├─ 下载地址： {config.VerInfo.url}");
+            Log($"   ├─ 安装路径： {config.InstallPath}");
+            if (config.Backup != null)
+            {
+                Log($"   ├─ 备份路径： {config.Backup.Path}");
+            }
+            Log($"   └─ 安装模式： {config.InstallType}");
 
-            Log("3. 创建安装目录...");
+            Log("[步骤3/8] 准备安装目录...");
             if (Directory.Exists(config.InstallPath))
             {
-                Log("   安装目录已存在");
+                Log("   [信息] 安装目录已存在");
             }
             else
             {
                 Directory.CreateDirectory(config.InstallPath);
-                Log("   安装目录创建成功");
+                Log("   [成功] 安装目录创建成功");
             }
 
-            Log("4. 下载更新文件...");
+            Log("[步骤4/8] 获取安装文件...");
             string zipFile = null;
+            bool isDownloaded = false;
+
             if (config.InstallType == InstallType.FromZip)
             {
                 zipFile = config.InstallFile;
                 if (!File.Exists(zipFile))
                 {
-                    Log("安装文件不存在！");
+                    Log($"   [错误] 指定的本地安装文件不存在: {zipFile}，结束升级任务");
                     return;
                 }
+                Log($"   [信息] 使用本地文件: {zipFile}");
             }
             else if (config.InstallType == InstallType.FromUrl)
             {
+                Log("   [信息] 从远程下载安装文件...");
                 zipFile = DownloadFile(config.VerInfo.url);
-                Log($"   文件下载成功: {zipFile}");
+                isDownloaded = true;
+                Log($"   [成功] 文件下载完成");
             }
             else
             {
                 zipFile = config.InstallFile;
-                if (!File.Exists(zipFile))
+                if (File.Exists(zipFile))
                 {
+                    Log($"   [信息] 使用本地文件: {zipFile}");
+                }
+                else
+                {
+                    Log($"   [信息] 本地文件不存在，转为远程下载...");
                     zipFile = DownloadFile(config.VerInfo.url);
-                    Log($"   文件下载成功: {zipFile}");
+                    isDownloaded = true;
+                    Log($"   [成功] 文件下载完成");
                 }
             }
 
-            Log("5. 备份现有文件...");
-            BackupFiles(config.InstallPath, config.Backup);
-
-            try
+            Log("[步骤5/8] 备份现有文件...");
+            var backupResult = BackupFiles(config.InstallPath, config.Backup);
+            if (backupResult.Success)
             {
-                Log("6. 解压文件到安装目录...");
-                ExtractFiles(zipFile, config.InstallPath, config.IgnoreFiles);
-                Log("   文件解压成功");
+                Log($"   [成功] 备份完成: {backupResult.BackupPath}");
+                if (backupResult.SkippedCount > 0)
+                    Log($"   [信息] 已备份 {backupResult.ProcessedCount} 个文件，跳过 {backupResult.SkippedCount} 个锁定文件");
             }
-            finally
+            else
             {
-                Log("7. 清理临时文件...");
+                Log($"   [警告] 备份失败或未启用，继续升级");
+            }
+
+            Log("[步骤6/8] 解压文件到安装目录...");
+            var extractResult = ExtractFiles(zipFile, config.InstallPath, config.IgnoreFiles);
+            Log($"   [成功] 文件解压完成");
+            if (extractResult.SkippedCount > 0)
+            {
+                Log($"   [信息] 已解压 {extractResult.ProcessedCount} 个文件，跳过 {extractResult.SkippedCount} 个忽略文件");
+                foreach (var skippedFile in extractResult.SkippedFiles)
+                {
+                    Log($"         └─ {skippedFile}");
+                }
+            }
+
+            Log("[步骤7/8] 清理临时文件...");
+            if (isDownloaded)
+            {
                 CleanupFile(zipFile);
-                Log("   临时文件清理成功");
+                Log("   [成功] 下载文件已清理");
+            }
+            else
+            {
+                Log("   [信息] 使用本地文件，保留原文件");
             }
 
-            Log("8. 启动执行文件...");
+            Log("[步骤8/8] 启动应用程序...");
             LaunchFile(config.InstallPath, config.Launch);
 
-            CloseApplication(config.AutoClose);
+            Log("");
+            Log("═══════════════════════════════════════════════");
+            Log("            升级任务完成");
+            Log("═══════════════════════════════════════════════");
 
-            Log("=== 升级任务完成 ===");
+            var summaryLines = new List<string>();
+            summaryLines.Add($"目标版本: {config.VerInfo.ver_info}");
+            summaryLines.Add($"安装路径: {config.InstallPath}");
+            if (backupResult.Success)
+                summaryLines.Add($"备份文件: {backupResult.BackupPath}");
+            summaryLines.Add($"处理文件: {extractResult.ProcessedCount} 个");
+            if (extractResult.SkippedCount > 0)
+                summaryLines.Add($"跳过文件: {extractResult.SkippedCount} 个");
+            if (config.Launch != null && !string.IsNullOrEmpty(config.Launch.File))
+                summaryLines.Add($"启动程序: {config.Launch.File}");
+
+            for (int i = 0; i < summaryLines.Count; i++)
+            {
+                var prefix = i == summaryLines.Count - 1 ? "   └─ " : "   ├─ ";
+                Log(prefix + summaryLines[i]);
+            }
+
+            Log("═══════════════════════════════════════════════");
+
+            CloseApplication(config.AutoClose);
         }
 
         private bool ValidateConfig(UpgradeConfig config)
         {
             if (string.IsNullOrEmpty(config.VerInfo?.url))
             {
-                Log("   下载地址为空，结束升级任务");
+                Log("   [错误] 下载地址为空，结束升级任务");
                 return false;
             }
             if (string.IsNullOrEmpty(config.InstallPath))
             {
-                Log("   安装路径为空，结束升级任务");
+                Log("   [错误] 安装路径为空，结束升级任务");
                 return false;
             }
             return true;
@@ -133,27 +194,28 @@ namespace Com.Scm.Upgrade
                             Console.Write($"\r   下载进度: {totalRead:N0} bytes");
                         }
                     }
-                    Log("");
+                    Console.WriteLine();
                 }
             }
             return tempFilePath;
         }
 
-        private void ExtractFiles(string zipPath, string installPath, List<string> ignoreFiles = null)
+        private ExtractResult ExtractFiles(string zipPath, string installPath, List<string> ignoreFiles = null)
         {
+            var result = new ExtractResult { ProcessedCount = 0, SkippedCount = 0, SkippedFiles = new List<string>() };
+
             using (var archive = ZipFile.OpenRead(zipPath))
             {
                 var entries = archive.Entries.ToList();
                 var totalEntries = entries.Count;
-                var processedEntries = 0;
 
                 if (totalEntries == 0)
                 {
-                    Log("   压缩包为空，跳过解压步骤");
-                    return;
+                    Log("   [警告] 压缩包为空，跳过解压步骤");
+                    return result;
                 }
 
-                Log($"   准备解压 {totalEntries} 个文件...");
+                Log($"   [信息] 准备解压 {totalEntries} 个文件...");
 
                 foreach (var entry in entries)
                 {
@@ -161,7 +223,7 @@ namespace Com.Scm.Upgrade
                     {
                         var dirPath = Path.Combine(installPath, entry.FullName);
                         Directory.CreateDirectory(dirPath);
-                        processedEntries++;
+                        result.ProcessedCount++;
                         continue;
                     }
 
@@ -173,7 +235,8 @@ namespace Com.Scm.Upgrade
                     {
                         if (File.Exists(destPath))
                         {
-                            Log($"   跳过忽略文件: {relativePath}");
+                            result.SkippedCount++;
+                            result.SkippedFiles.Add(relativePath);
                             shouldIgnore = true;
                         }
                     }
@@ -182,15 +245,20 @@ namespace Com.Scm.Upgrade
                     {
                         Directory.CreateDirectory(Path.GetDirectoryName(destPath));
                         entry.ExtractToFile(destPath, true);
+                        result.ProcessedCount++;
+                    }
+                    else
+                    {
+                        result.ProcessedCount++;
                     }
 
-                    processedEntries++;
-                    var progress = (int)((processedEntries * 100) / totalEntries);
-                    Console.Write($"\r   解压进度: {processedEntries}/{totalEntries} ({progress}%)");
+                    var progress = (int)((result.ProcessedCount * 100) / totalEntries);
+                    Console.Write($"\r   解压进度: {result.ProcessedCount}/{totalEntries} ({progress}%)");
                 }
             }
 
             Console.WriteLine();
+            return result;
         }
 
         private void CleanupFile(string tempFilePath)
@@ -201,25 +269,27 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private void BackupFiles(string installPath, BackupConfig config)
+        private BackupResult BackupFiles(string installPath, BackupConfig config)
         {
+            var result = new BackupResult { Success = false, ProcessedCount = 0, SkippedCount = 0 };
+
             if (config == null)
             {
-                Log("   未启用自动备份，跳过备份步骤");
-                return;
+                Log("   [信息] 未启用自动备份，跳过备份步骤");
+                return result;
             }
 
             var backupPath = config.Path;
             if (string.IsNullOrEmpty(backupPath))
             {
-                Log("   备份路径为空，跳过备份步骤");
-                return;
+                Log("   [信息] 备份路径为空，跳过备份步骤");
+                return result;
             }
 
             if (!Directory.Exists(installPath))
             {
-                Log("   安装目录不存在，跳过备份步骤");
-                return;
+                Log("   [信息] 安装目录不存在，跳过备份步骤");
+                return result;
             }
 
             try
@@ -231,15 +301,14 @@ namespace Com.Scm.Upgrade
 
                 var allFiles = Directory.GetFiles(installPath, "*", SearchOption.AllDirectories);
                 var totalFiles = allFiles.Length;
-                var processedFiles = 0;
 
                 if (totalFiles == 0)
                 {
-                    Log("   安装目录为空，跳过备份步骤");
-                    return;
+                    Log("   [信息] 安装目录为空，跳过备份步骤");
+                    return result;
                 }
 
-                Log($"   准备备份 {totalFiles} 个文件...");
+                Log($"   [信息] 准备备份 {totalFiles} 个文件...");
 
                 using (var zipStream = File.Create(backupFilePath))
                 using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
@@ -251,37 +320,41 @@ namespace Com.Scm.Upgrade
                         try
                         {
                             archive.CreateEntryFromFile(filePath, relativePath, CompressionLevel.Optimal);
+                            result.ProcessedCount++;
                         }
-                        catch (IOException ex)
+                        catch (IOException)
                         {
-                            Log($"   跳过锁定文件: {relativePath} ({ex.Message})");
+                            result.SkippedCount++;
                         }
 
-                        processedFiles++;
-                        var progress = (int)((processedFiles * 100) / totalFiles);
-                        Console.Write($"\r   备份进度: {processedFiles}/{totalFiles} ({progress}%)");
+                        var progress = (int)((result.ProcessedCount + result.SkippedCount) * 100 / totalFiles);
+                        Console.Write($"\r   备份进度: {result.ProcessedCount + result.SkippedCount}/{totalFiles} ({progress}%)");
                     }
                 }
 
                 Console.WriteLine();
-                Log($"   备份成功: {backupFilePath}");
+                result.Success = true;
+                result.BackupPath = backupFilePath;
             }
             catch (Exception ex)
             {
-                Log($"   备份失败: {ex.Message}");
+                Log($"   [错误] 备份失败: {ex.Message}");
             }
+
+            return result;
         }
 
         private void LaunchFile(string installPath, LaunchConfig config)
         {
             if (config == null)
             {
+                Log("   [信息] 未配置启动程序，跳过启动步骤");
                 return;
             }
 
             if (string.IsNullOrEmpty(config.File))
             {
-                Log("   未配置执行文件，跳过启动步骤");
+                Log("   [信息] 未配置执行文件，跳过启动步骤");
                 return;
             }
 
@@ -296,11 +369,11 @@ namespace Com.Scm.Upgrade
                     UseShellExecute = true
                 };
                 System.Diagnostics.Process.Start(processStartInfo);
-                Log($"   启动成功: {executePath}");
+                Log($"   [成功] 启动程序: {config.File}");
             }
             else
             {
-                Log($"   警告: 执行文件不存在: {executePath}");
+                Log($"   [警告] 执行文件不存在: {executePath}");
             }
         }
 
@@ -311,13 +384,29 @@ namespace Com.Scm.Upgrade
                 return;
             }
 
-            Log("   关闭应用程序...");
+            Log("");
+            Log("   [信息] 自动关闭升级程序...");
             Environment.Exit(0);
         }
 
         private void Log(string message)
         {
             Console.WriteLine(message);
+        }
+
+        private class ExtractResult
+        {
+            public int ProcessedCount { get; set; }
+            public int SkippedCount { get; set; }
+            public List<string> SkippedFiles { get; set; } = new List<string>();
+        }
+
+        private class BackupResult
+        {
+            public bool Success { get; set; }
+            public string BackupPath { get; set; }
+            public int ProcessedCount { get; set; }
+            public int SkippedCount { get; set; }
         }
     }
 }

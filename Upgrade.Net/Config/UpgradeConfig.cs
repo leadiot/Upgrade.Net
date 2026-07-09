@@ -62,7 +62,7 @@ namespace Com.Scm.Upgrade.Config
 
         public void LoadDefault()
         {
-            Title = "Nas.Net更新";
+            Title = "Upgrade.Net更新";
 
             VerInfo.ver_info = "1.0.0";
             VerInfo.ver_date = "2024-01-01";
@@ -122,11 +122,11 @@ namespace Com.Scm.Upgrade.Config
         /// </summary>
         Auto,
         /// <summary>
-        /// 从zip包安装
+        /// 从zip文件安装
         /// </summary>
         FromZip,
         /// <summary>
-        /// 从url安装
+        /// 从url下载安装
         /// </summary>
         FromUrl
     }
