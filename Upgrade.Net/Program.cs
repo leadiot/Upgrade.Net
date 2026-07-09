@@ -1,11 +1,19 @@
-﻿
 namespace Com.Scm.Upgrade
 {
     internal class Program
     {
-        private static void Main(string[] args)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Hello, World!");
+            try
+            {
+                var _ = new Upgrade().StartAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine();
+                Console.WriteLine($"升级任务失败: {ex.Message}");
+                Console.WriteLine($"错误详情: {ex.ToString()}");
+            }
         }
     }
 }

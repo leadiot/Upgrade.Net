@@ -1,5 +1,4 @@
 ﻿using Com.Scm.Upgrade.Dto;
-using System.IO;
 using System.Text.Json;
 
 namespace Com.Scm.Upgrade.Config
@@ -9,7 +8,7 @@ namespace Com.Scm.Upgrade.Config
         /// <summary>
         /// 配置文件
         /// </summary>
-        public const string CONFIG_FILE = "Upgrade.Net.json";
+        public const string CONFIG_FILE = "upgrade.json";
 
         /// <summary>
         /// 应用标题
@@ -42,6 +41,16 @@ namespace Com.Scm.Upgrade.Config
         public string ExecuteArgs { get; set; }
 
         /// <summary>
+        /// 是否自动备份
+        /// </summary>
+        public bool AutoBackup { get; set; }
+
+        /// <summary>
+        /// 自动备份路径
+        /// </summary>
+        public string BackupPath { get; set; }
+
+        /// <summary>
         /// 应用信息
         /// </summary>
         public ScmAppInfo AppInfo { get; set; } = new ScmAppInfo();
@@ -50,6 +59,11 @@ namespace Com.Scm.Upgrade.Config
         /// 版本信息
         /// </summary>
         public ScmVerInfo VerInfo { get; set; } = new ScmVerInfo();
+
+        /// <summary>
+        /// 忽略文件列表
+        /// </summary>
+        public List<string> IgnoreFiles { get; set; }
 
         public void LoadDefault()
         {
@@ -71,7 +85,11 @@ namespace Com.Scm.Upgrade.Config
             if (File.Exists(file))
             {
                 var json = File.ReadAllText(file);
-                return JsonSerializer.Deserialize<UpgradeConfig>(json);
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                return JsonSerializer.Deserialize<UpgradeConfig>(json, options);
             }
 
             return null;
