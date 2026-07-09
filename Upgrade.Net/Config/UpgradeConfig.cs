@@ -21,34 +21,24 @@ namespace Com.Scm.Upgrade.Config
         public string InstallPath { get; set; }
 
         /// <summary>
-        /// 是否重启
+        /// 安装来源
         /// </summary>
-        public bool AutoStart { get; set; }
+        public InstallType InstallType { get; set; }
 
         /// <summary>
-        /// 是否自动关闭原程序
+        /// 安装zip包路径
         /// </summary>
-        public bool AutoClose { get; set; }
-
-        /// <summary>
-        /// 重启文件
-        /// </summary>
-        public string ExecuteFile { get; set; }
+        public string InstallFile { get; set; }
 
         /// <summary>
         /// 重启参数
         /// </summary>
-        public string ExecuteArgs { get; set; }
-
-        /// <summary>
-        /// 是否自动备份
-        /// </summary>
-        public bool AutoBackup { get; set; }
+        public LaunchConfig Launch { get; set; }
 
         /// <summary>
         /// 自动备份路径
         /// </summary>
-        public string BackupPath { get; set; }
+        public BackupConfig Backup { get; set; }
 
         /// <summary>
         /// 应用信息
@@ -59,6 +49,11 @@ namespace Com.Scm.Upgrade.Config
         /// 版本信息
         /// </summary>
         public ScmVerInfo VerInfo { get; set; } = new ScmVerInfo();
+
+        /// <summary>
+        /// 是否自动关闭原程序
+        /// </summary>
+        public bool AutoClose { get; set; }
 
         /// <summary>
         /// 忽略文件列表
@@ -73,10 +68,6 @@ namespace Com.Scm.Upgrade.Config
             VerInfo.ver_date = "2024-01-01";
             VerInfo.remark = "这是版本更新说明！";
             VerInfo.url = "";
-
-            AutoStart = true;
-            ExecuteFile = "";
-            ExecuteArgs = null;
         }
 
         public static UpgradeConfig Load()
@@ -101,5 +92,42 @@ namespace Com.Scm.Upgrade.Config
             var json = JsonSerializer.Serialize(this);
             File.WriteAllText(file, json);
         }
+    }
+
+    public class LaunchConfig
+    {
+        /// <summary>
+        /// 执行文件
+        /// </summary>
+        public string File { get; set; }
+
+        /// <summary>
+        /// 执行参数
+        /// </summary>
+        public string Args { get; set; }
+    }
+
+    public class BackupConfig
+    {
+        /// <summary>
+        /// 备份文件路径
+        /// </summary>
+        public string Path { get; set; }
+    }
+
+    public enum InstallType
+    {
+        /// <summary>
+        /// 自动
+        /// </summary>
+        Auto,
+        /// <summary>
+        /// 从zip包安装
+        /// </summary>
+        FromZip,
+        /// <summary>
+        /// 从url安装
+        /// </summary>
+        FromUrl
     }
 }
