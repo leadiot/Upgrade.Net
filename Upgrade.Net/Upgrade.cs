@@ -5,10 +5,15 @@ namespace Com.Scm.Upgrade
 {
     public class Upgrade
     {
+        public const int MAJOR = 1;
+        public const int MINOR = 0;
+        public const int PATCH = 0;
+        public const int BUILD = 1;
+
         public void Start()
         {
             Log("═══════════════════════════════════════════════");
-            Log("            应用升级程序 v1.0");
+            Log($"            应用升级程序 v{MAJOR}.{MINOR}.{PATCH}.{BUILD}");
             Log("═══════════════════════════════════════════════");
             Log("");
 
@@ -366,7 +371,8 @@ namespace Com.Scm.Upgrade
                     FileName = executePath,
                     Arguments = config.Args ?? string.Empty,
                     WorkingDirectory = installPath,
-                    UseShellExecute = true
+                    UseShellExecute = true,
+                    CreateNoWindow = true
                 };
                 System.Diagnostics.Process.Start(processStartInfo);
                 Log($"   [成功] 启动程序: {config.File}");
@@ -379,14 +385,16 @@ namespace Com.Scm.Upgrade
 
         private void CloseApplication(bool close)
         {
-            if (!close)
+            if (close)
             {
+                Log("");
+                Log("   [信息] 升级程序即将退出...");
                 return;
             }
 
             Log("");
-            Log("   [信息] 自动关闭升级程序...");
-            Environment.Exit(0);
+            Log("   [信息] 升级程序已完成，按任意键退出...");
+            Console.Read();
         }
 
         private void Log(string message)
