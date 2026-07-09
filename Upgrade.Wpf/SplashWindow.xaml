@@ -1,11 +1,11 @@
-﻿<Window
+<Window
     x:Class="Com.Scm.Upgrade.SplashWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Height="300" Width="500"
+    Height="360" Width="500"
     WindowStyle="None"
     WindowStartupLocation="CenterScreen"
     Topmost="True"
@@ -13,24 +13,35 @@
     Background="Transparent"
     Icon="/Resources/logo.ico"
     Title="ScmDriver">
-    <Border CornerRadius="5" BorderThickness="1" BorderBrush="red"
-        Background="#FAFAFA">
+    <Border CornerRadius="16" BorderThickness="1" BorderBrush="{StaticResource BorderColorBrush}"
+        Background="{StaticResource BgCard}" ClipToBounds="True">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="20" Color="#000000" Opacity="0.4"/>
+        </Border.Effect>
         <Grid>
-            <!-- 启动屏内容：Logo + 进度条 + 提示文本 -->
-            <StackPanel x:Name="PlLogo" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20" Width="300">
-                <Image Source="/Resources/logo.png" Width="128" Height="128"/>
-                <TextBlock Text="我的应用" FontSize="24" TextAlignment="Center" Margin="20"/>
-                <ProgressBar x:Name="progressBar" Value="100" Maximum="200" IsIndeterminate="True"/>
-                <TextBlock x:Name="statusText" Text="初始化中..." Foreground="#333333" />
-            </StackPanel>
-            <DockPanel x:Name="PlInfo" Visibility="Collapsed" Margin="12">
-                <StackPanel DockPanel.Dock="Bottom">
-                    <Button x:Name="BtExit" Click="BtExit_Click">关闭</Button>
-                </StackPanel>
-                <Border Margin="0 0 0 6">
-                    <TextBox x:Name="TbInfo" TextWrapping="Wrap" AcceptsReturn="True" AcceptsTab="True" IsReadOnly="True" VerticalScrollBarVisibility="Auto" Margin="6"></TextBox>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="60"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel x:Name="PlLogo" Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
+                <Border Width="100" Height="100" CornerRadius="20" Background="{StaticResource AccentPrimary}" Margin="0,0,0,20">
+                    <TextBlock Text="⟳" FontSize="48" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"/>
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="20" Color="{StaticResource AccentPrimaryColor}" Opacity="0.5"/>
+                    </Border.Effect>
                 </Border>
-            </DockPanel>
+                <TextBlock Text="应用更新" FontSize="24" FontWeight="Bold" TextAlignment="Center" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,8"/>
+                <TextBlock x:Name="statusText" Text="初始化中..." FontSize="14" TextAlignment="Center" Foreground="{StaticResource TextSecondary}"/>
+                <ProgressBar x:Name="progressBar" Value="0" Maximum="100" Height="6" Width="200" Margin="0,20,0,0" Style="{StaticResource ModernProgressBar}"/>
+            </StackPanel>
+
+            <Border Grid.Row="1" Background="{StaticResource BgSecondary}" CornerRadius="0,0,16,16">
+                <StackPanel x:Name="PlInfo" Visibility="Collapsed" Margin="12">
+                    <TextBox x:Name="TbInfo" TextWrapping="Wrap" AcceptsReturn="True" AcceptsTab="True" IsReadOnly="True" VerticalScrollBarVisibility="Auto" Height="80"/>
+                    <Button x:Name="BtExit" Click="BtExit_Click" Width="100" HorizontalAlignment="Center" Margin="0,8,0,0" Style="{StaticResource ModernButtonStyle}" Tag="Danger">关闭</Button>
+                </StackPanel>
+            </Border>
         </Grid>
     </Border>
 </Window>

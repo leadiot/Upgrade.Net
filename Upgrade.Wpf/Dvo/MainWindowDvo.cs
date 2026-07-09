@@ -1,11 +1,11 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 
 namespace Com.Scm.Upgrade.Dvo
 {
     public class MainWindowDvo : INotifyPropertyChanged
     {
         private string content;
-        public string Content { get { return content; } set { content = value; OnPropertyChanged(nameof(content)); } }
+        public string Content { get { return content; } set { content = value; OnPropertyChanged(nameof(Content)); } }
 
         private string info;
         public string Info { get { return info; } set { info = value; OnPropertyChanged(nameof(Info)); } }

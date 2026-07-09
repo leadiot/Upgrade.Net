@@ -1,4 +1,4 @@
-﻿using Com.Scm.Upgrade.Config;
+using Com.Scm.Upgrade.Config;
 using Com.Scm.Upgrade.Dvo;
 using System.Diagnostics;
 using System.IO;
@@ -8,47 +8,19 @@ using System.Windows;
 
 namespace Com.Scm.Upgrade
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         private MainWindowDvo _Dvo;
-
         private UpgradeConfig _AppConfig;
-
-        /// <summary>
-        /// HttpClient实例（静态单例避免重复创建）
-        /// </summary>
         private static readonly HttpClient _httpClient = new HttpClient
         {
-            Timeout = TimeSpan.FromMinutes(30) // 设置超时时间
+            Timeout = TimeSpan.FromMinutes(30)
         };
-
-        /// <summary>
-        /// 取消令牌源
-        /// </summary>
         private CancellationTokenSource _Token;
-        /// <summary>
-        /// 是否暂停
-        /// </summary>
         private bool _Paused;
-        /// <summary>
-        /// 已下载字节数
-        /// </summary>
         private long _DownloadedBytes;
-        /// <summary>
-        /// 文件总字节数
-        /// </summary>
         private long _TotalBytes;
-
-        /// <summary>
-        /// 压缩包内总文件/文件夹数
-        /// </summary>
         private int _TotalEntries;
-        /// <summary>
-        /// 已处理的文件/文件夹数
-        /// </summary>
         private int _ProcessedEntries;
 
         public MainWindow()
@@ -56,7 +28,7 @@ namespace Com.Scm.Upgrade
             InitializeComponent();
         }
 
-        public async void Init(UpgradeConfig appConfig)
+        public void Init(UpgradeConfig appConfig)
         {
             _AppConfig = appConfig;
 
@@ -69,7 +41,6 @@ namespace Com.Scm.Upgrade
 
             if (appConfig.AppInfo != null)
             {
-                //_Dvo.AppName = appConfig.AppInfo.name;
                 _Dvo.Content = appConfig.AppInfo.content;
             }
             if (appConfig.VerInfo == null)
@@ -84,9 +55,8 @@ namespace Com.Scm.Upgrade
                 _AppConfig.InstallPath = AppDomain.CurrentDomain.BaseDirectory;
             }
 
-            //TbVersion.Text = $"版本号: {verInfo.Version}  发布日期: {verInfo.ReleaseDate}";
             _Dvo.Enabled = true;
-            _Dvo.Status = "准备下载...";
+            _Dvo.Status = "准备更新...";
 
             this.DataContext = _Dvo;
 
@@ -101,16 +71,16 @@ namespace Com.Scm.Upgrade
         private void BtPause_Click(object sender, RoutedEventArgs e)
         {
             _Paused = true;
-            _Dvo.Status = "下载已暂停";
+            _Dvo.Status = "已暂停";
             BtStart.IsEnabled = true;
             BtPause.IsEnabled = false;
-            BtStart.Content = "继续下载";
+            BtStart.Content = "继续";
         }
 
         private void BtCancel_Click(object sender, RoutedEventArgs e)
         {
             _Token?.Cancel();
-            _Dvo.Status = "正在取消下载...";
+            _Dvo.Status = "正在取消...";
             BtStart.IsEnabled = true;
             BtPause.IsEnabled = false;
             BtCancel.IsEnabled = false;
@@ -118,7 +88,6 @@ namespace Com.Scm.Upgrade
 
         private async void Start()
         {
-            // 如果是暂停后继续
             if (_Paused)
             {
                 _Paused = false;
@@ -128,63 +97,53 @@ namespace Com.Scm.Upgrade
                 return;
             }
 
-            if (string.IsNullOrEmpty(_AppConfig.VerInfo?.url))
+            if (!ValidateConfig(_AppConfig))
             {
-                BtStart.IsEnabled = false;
-                BtPause.IsEnabled = false;
-                BtCancel.IsEnabled = false;
-                _Dvo.Status = "下载地址为空，无法更新！";
                 return;
             }
 
-            // 重置状态
             _Token = new CancellationTokenSource();
-            _DownloadedBytes = 0;
-            _TotalBytes = 0;
-            PbInfo.Value = 0;
-            _Dvo.Status = "准备下载...";
+            _Dvo.Ratio = 0;
 
-            // 禁用/启用按钮
             BtStart.IsEnabled = false;
             BtPause.IsEnabled = true;
             BtCancel.IsEnabled = true;
 
             try
             {
-                var file = Path.Combine(AppContext.BaseDirectory, ".Temp");
-                if (!Directory.Exists(file))
-                {
-                    Directory.CreateDirectory(file);
-                }
+                await PrepareInstallDirectory();
 
-                file = Path.Combine(file, DateTime.Now.ToFileTime() + ".zip");
-                var result = await DownloadFileAsync(_AppConfig.VerInfo.url, file, _Token.Token);
-                if (!result)
+                var zipFile = await GetInstallFile();
+                if (zipFile == null)
                 {
                     return;
                 }
 
-                result = await UnzipFileAsync(file, _AppConfig.InstallPath, _Token.Token);
-                if (!result)
+                bool isDownloaded = !string.Equals(zipFile, _AppConfig.InstallFile);
+
+                string offlineFile = await CopyOfflineFile();
+
+                await BackupFiles();
+
+                await ExtractFiles(zipFile);
+
+                await DeleteOfflineFile(offlineFile);
+
+                await CleanupTempFile(zipFile, isDownloaded);
+
+                await LaunchApplication();
+
+                _Dvo.Status = "升级完成！";
+
+                if (_AppConfig.AutoClose)
                 {
-                    return;
+                    await Task.Delay(1000);
+                    Close();
                 }
-
-                Restart();
-
-                if (!_AppConfig.AutoClose)
-                {
-                    BtStart.IsEnabled = false;
-                    BtPause.IsEnabled = false;
-                    BtCancel.IsEnabled = true;
-                    return;
-                }
-
-                Close();
             }
             catch (OperationCanceledException)
             {
-                _Dvo.Status = "下载已取消";
+                _Dvo.Status = "已取消";
             }
             catch (Exception ex)
             {
@@ -193,7 +152,6 @@ namespace Com.Scm.Upgrade
             }
             finally
             {
-                // 恢复按钮状态
                 BtStart.IsEnabled = true;
                 BtPause.IsEnabled = false;
                 BtCancel.IsEnabled = false;
@@ -201,80 +159,339 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        /// <summary>
-        /// 文件下载
-        /// </summary>
-        /// <param name="url"></param>
-        /// <param name="savePath"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        public async Task<bool> DownloadFileAsync(string url, string savePath, CancellationToken cancellationToken)
+        private bool ValidateConfig(UpgradeConfig config)
         {
-            // 检查文件是否已存在，若存在则删除（也可实现断点续传，此处简化）
-            if (File.Exists(savePath))
+            if (string.IsNullOrEmpty(config.VerInfo?.url))
             {
-                File.Delete(savePath);
+                _Dvo.Status = "下载地址为空，无法更新！";
+                return false;
             }
-
-            using (var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
+            if (string.IsNullOrEmpty(config.InstallPath))
             {
-                response.EnsureSuccessStatusCode(); // 确保响应成功
+                _Dvo.Status = "安装路径为空，无法更新！";
+                return false;
+            }
+            return true;
+        }
 
-                // 获取文件总大小
-                _TotalBytes = response.Content.Headers.ContentLength ?? -1;
-                if (_TotalBytes == -1)
+        private async Task PrepareInstallDirectory()
+        {
+            _Dvo.Status = "[步骤3/8] 准备安装目录...";
+            await Task.Run(() =>
+            {
+                if (!Directory.Exists(_AppConfig.InstallPath))
                 {
-                    _Dvo.Status = "无法获取文件大小";
+                    Directory.CreateDirectory(_AppConfig.InstallPath);
                 }
+            });
+            _Dvo.Status = "[步骤3/8] 安装目录准备完成";
+        }
 
-                // 读取响应流并写入文件
-                using (var stream = await response.Content.ReadAsStreamAsync(cancellationToken))
-                using (var fileStream = new FileStream(savePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+        private async Task<string> GetInstallFile()
+        {
+            _Dvo.Status = "[步骤4/8] 获取安装文件...";
+
+            if (_AppConfig.InstallType == InstallType.FromZip)
+            {
+                if (!File.Exists(_AppConfig.InstallFile))
                 {
-                    var buffer = new byte[8192];
-                    int bytesRead;
-                    double progress;
+                    _Dvo.Status = $"[步骤4/8] 错误：指定的本地文件不存在: {_AppConfig.InstallFile}";
+                    return null;
+                }
+                _Dvo.Status = $"[步骤4/8] 使用本地文件: {_AppConfig.InstallFile}";
+                return _AppConfig.InstallFile;
+            }
+            else if (_AppConfig.InstallType == InstallType.FromUrl)
+            {
+                _Dvo.Status = "[步骤4/8] 从远程服务器下载...";
+                return await DownloadFileAsync(_AppConfig.VerInfo.url);
+            }
+            else
+            {
+                if (File.Exists(_AppConfig.InstallFile))
+                {
+                    _Dvo.Status = $"[步骤4/8] 使用本地文件: {_AppConfig.InstallFile}";
+                    return _AppConfig.InstallFile;
+                }
+                else
+                {
+                    _Dvo.Status = "[步骤4/8] 本地文件不存在，转为远程下载...";
+                    return await DownloadFileAsync(_AppConfig.VerInfo.url);
+                }
+            }
+        }
 
-                    while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
+        private async Task<string> DownloadFileAsync(string url)
+        {
+            var tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".zip");
+
+            using (var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, _Token.Token))
+            {
+                response.EnsureSuccessStatusCode();
+
+                _TotalBytes = response.Content.Headers.ContentLength ?? -1;
+                _DownloadedBytes = 0;
+
+                using (var stream = await response.Content.ReadAsStreamAsync(_Token.Token))
+                using (var fileStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, true))
+                {
+                    var buffer = new byte[81920];
+                    int bytesRead;
+
+                    while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, _Token.Token)) > 0)
                     {
-                        // 检查是否暂停
                         while (_Paused)
                         {
-                            await Task.Delay(100, cancellationToken); // 暂停时循环等待
+                            await Task.Delay(100, _Token.Token);
                         }
 
-                        // 写入文件
-                        await fileStream.WriteAsync(buffer, 0, bytesRead, cancellationToken);
-
-                        // 更新已下载字节数
+                        await fileStream.WriteAsync(buffer, 0, bytesRead, _Token.Token);
                         _DownloadedBytes += bytesRead;
 
-                        // 计算进度
                         if (_TotalBytes > 0)
                         {
-                            progress = (_DownloadedBytes * 100.0) / _TotalBytes;
+                            var progress = (_DownloadedBytes * 100.0) / _TotalBytes;
                             _Dvo.Ratio = Math.Min(progress, 100);
-
-                            // 更新进度文本（格式化大小）
-                            _Dvo.Status = $"已下载：{FormatFileSize(_DownloadedBytes)} / {FormatFileSize(_TotalBytes)} ({progress:0.00}%)";
+                            _Dvo.Status = $"[步骤4/8] 下载中：{FormatFileSize(_DownloadedBytes)} / {FormatFileSize(_TotalBytes)} ({progress:0.00}%)";
                         }
                         else
                         {
-                            _Dvo.Status = $"已下载：{FormatFileSize(_DownloadedBytes)} (未知总大小)";
+                            _Dvo.Status = $"[步骤4/8] 下载中：{FormatFileSize(_DownloadedBytes)}";
                         }
                     }
                 }
             }
 
-            _Dvo.Status = "文件下载完成！";
-            return true;
+            _Dvo.Ratio = 100;
+            _Dvo.Status = "[步骤4/8] 文件下载完成";
+            return tempFilePath;
         }
 
-        /// <summary>
-        /// 格式化文件大小（字节转KB/MB/GB）
-        /// </summary>
-        /// <param name="size"></param>
-        /// <returns></returns>
+        private async Task<string> CopyOfflineFile()
+        {
+            if (_AppConfig.Offline == null)
+            {
+                return null;
+            }
+
+            var file = _AppConfig.Offline.File;
+            if (string.IsNullOrEmpty(file) || !File.Exists(file))
+            {
+                return null;
+            }
+
+            _Dvo.Status = "[步骤4/8] 复制离线文件...";
+            var name = Path.GetFileName(file);
+            var dstFile = Path.Combine(_AppConfig.InstallPath, name);
+
+            await Task.Run(() =>
+            {
+                File.Copy(file, dstFile, true);
+                Thread.Sleep(_AppConfig.Offline.Time * 1000);
+            });
+
+            return dstFile;
+        }
+
+        private async Task BackupFiles()
+        {
+            _Dvo.Ratio = 0;
+            _Dvo.Status = "[步骤5/8] 备份现有文件...";
+
+            if (_AppConfig.Backup == null || string.IsNullOrEmpty(_AppConfig.Backup.Path))
+            {
+                _Dvo.Status = "[步骤5/8] 未配置备份，跳过";
+                return;
+            }
+
+            if (!Directory.Exists(_AppConfig.InstallPath))
+            {
+                _Dvo.Status = "[步骤5/8] 安装目录不存在，跳过备份";
+                return;
+            }
+
+            await Task.Run(() =>
+            {
+                try
+                {
+                    Directory.CreateDirectory(_AppConfig.Backup.Path);
+                    var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+                    var backupFileName = $"backup_{timestamp}.zip";
+                    var backupFilePath = Path.Combine(_AppConfig.Backup.Path, backupFileName);
+
+                    var allFiles = Directory.GetFiles(_AppConfig.InstallPath, "*", SearchOption.AllDirectories);
+                    var totalFiles = allFiles.Length;
+
+                    if (totalFiles == 0)
+                    {
+                        _Dvo.Status = "[步骤5/8] 安装目录为空，跳过备份";
+                        return;
+                    }
+
+                    _Dvo.Status = $"[步骤5/8] 准备备份 {totalFiles} 个文件...";
+
+                    using (var zipStream = File.Create(backupFilePath))
+                    using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
+                    {
+                        int processed = 0;
+                        int skipped = 0;
+
+                        foreach (var filePath in allFiles)
+                        {
+                            var relativePath = Path.GetRelativePath(_AppConfig.InstallPath, filePath);
+
+                            try
+                            {
+                                archive.CreateEntryFromFile(filePath, relativePath, CompressionLevel.Optimal);
+                                processed++;
+                            }
+                            catch (IOException)
+                            {
+                                skipped++;
+                            }
+
+                            var progress = ((processed + skipped) * 100.0) / totalFiles;
+                            _Dvo.Ratio = Math.Min(progress, 100);
+                            _Dvo.Status = $"[步骤5/8] 备份中：{processed}/{totalFiles} ({progress:0.00}%)";
+                        }
+                    }
+
+                    _Dvo.Status = $"[步骤5/8] 备份完成: {backupFilePath}";
+                }
+                catch (Exception ex)
+                {
+                    _Dvo.Status = $"[步骤5/8] 备份失败: {ex.Message}";
+                }
+            });
+        }
+
+        private async Task ExtractFiles(string zipPath)
+        {
+            _Dvo.Ratio = 0;
+            _Dvo.Status = "[步骤6/8] 解压文件...";
+
+            await Task.Run(() =>
+            {
+                using (var archive = ZipFile.OpenRead(zipPath))
+                {
+                    var entries = archive.Entries.ToList();
+                    _TotalEntries = entries.Count;
+                    _ProcessedEntries = 0;
+
+                    if (_TotalEntries == 0)
+                    {
+                        _Dvo.Status = "[步骤6/8] 压缩包为空";
+                        return;
+                    }
+
+                    _Dvo.Status = $"[步骤6/8] 准备解压 {_TotalEntries} 个文件...";
+
+                    foreach (var entry in entries)
+                    {
+                        if (entry.FullName.EndsWith("/"))
+                        {
+                            var dirPath = Path.Combine(_AppConfig.InstallPath, entry.FullName);
+                            Directory.CreateDirectory(dirPath);
+                            _ProcessedEntries++;
+                            continue;
+                        }
+
+                        var destPath = Path.Combine(_AppConfig.InstallPath, entry.FullName);
+                        var relativePath = entry.FullName;
+
+                        bool shouldIgnore = false;
+                        if (_AppConfig.IgnoreFiles != null && _AppConfig.IgnoreFiles.Any(ignore =>
+                            relativePath.Contains(ignore, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            if (File.Exists(destPath))
+                            {
+                                shouldIgnore = true;
+                            }
+                        }
+
+                        if (!shouldIgnore)
+                        {
+                            Directory.CreateDirectory(Path.GetDirectoryName(destPath));
+                            entry.ExtractToFile(destPath, true);
+                        }
+
+                        _ProcessedEntries++;
+                        var progress = (_ProcessedEntries * 100.0) / _TotalEntries;
+                        _Dvo.Ratio = Math.Min(progress, 100);
+                        _Dvo.Status = $"[步骤6/8] 解压中：{_ProcessedEntries}/{_TotalEntries} ({progress:0.00}%)";
+                    }
+                }
+            });
+
+            _Dvo.Status = "[步骤6/8] 文件解压完成";
+        }
+
+        private async Task DeleteOfflineFile(string file)
+        {
+            if (!string.IsNullOrEmpty(file) && File.Exists(file))
+            {
+                await Task.Run(() =>
+                {
+                    try
+                    {
+                        File.Delete(file);
+                        _Dvo.Status = $"[步骤6/8] 删除离线文件: {file}";
+                    }
+                    catch { }
+                });
+            }
+        }
+
+        private async Task CleanupTempFile(string zipFile, bool isDownloaded)
+        {
+            _Dvo.Status = "[步骤7/8] 清理临时文件...";
+
+            if (isDownloaded && File.Exists(zipFile))
+            {
+                await Task.Run(() => File.Delete(zipFile));
+                _Dvo.Status = "[步骤7/8] 下载文件已清理";
+            }
+            else
+            {
+                _Dvo.Status = "[步骤7/8] 使用本地文件，保留原文件";
+            }
+        }
+
+        private async Task LaunchApplication()
+        {
+            _Dvo.Status = "[步骤8/8] 启动应用程序...";
+
+            if (_AppConfig.Launch == null || string.IsNullOrEmpty(_AppConfig.Launch.File))
+            {
+                _Dvo.Status = "[步骤8/8] 未配置启动程序，跳过";
+                return;
+            }
+
+            var executePath = Path.Combine(_AppConfig.InstallPath, _AppConfig.Launch.File);
+
+            if (File.Exists(executePath))
+            {
+                await Task.Run(() =>
+                {
+                    var processStartInfo = new ProcessStartInfo
+                    {
+                        FileName = executePath,
+                        Arguments = _AppConfig.Launch.Args ?? string.Empty,
+                        WorkingDirectory = _AppConfig.InstallPath,
+                        UseShellExecute = true,
+                        CreateNoWindow = true
+                    };
+                    Process.Start(processStartInfo);
+                });
+
+                _Dvo.Status = $"[步骤8/8] 启动程序: {_AppConfig.Launch.File}";
+            }
+            else
+            {
+                _Dvo.Status = $"[步骤8/8] 警告：执行文件不存在: {executePath}";
+            }
+        }
+
         private string FormatFileSize(long size)
         {
             var units = new string[] { "B", "KB", "MB", "GB", "TB", "PB" };
@@ -287,111 +504,6 @@ namespace Com.Scm.Upgrade
             return size + units[i];
         }
 
-        /// <summary>
-        /// 文件解压
-        /// </summary>
-        /// <param name="zipFilePath">ZIP文件路径</param>
-        /// <param name="unzipPath">解压目标路径</param>
-        /// <param name="cancellationToken">取消令牌</param>
-        private async Task<bool> UnzipFileAsync(string zipFilePath, string unzipPath, CancellationToken cancellationToken)
-        {
-            // 创建解压目录（不存在则创建）
-            if (!Directory.Exists(unzipPath))
-            {
-                Directory.CreateDirectory(unzipPath);
-            }
-
-            // 异步解压（避免UI卡顿）
-            using (var archive = await ZipFile.OpenReadAsync(zipFilePath))
-            {
-                // 获取压缩包内总条目数
-                _TotalEntries = archive.Entries.Count;
-                if (_TotalEntries == 0)
-                {
-                    _Dvo.Status = "压缩包为空！";
-                    return false;
-                }
-
-                // 遍历所有条目并解压
-                foreach (var entry in archive.Entries)
-                {
-                    // 检查是否取消
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    try
-                    {
-                        // 计算条目完整路径
-                        var entryPath = Path.Combine(unzipPath, entry.FullName);
-
-                        // 如果是目录，创建目录
-                        if (string.IsNullOrEmpty(entry.Name))
-                        {
-                            if (!Directory.Exists(entryPath))
-                            {
-                                Directory.CreateDirectory(entryPath);
-                            }
-                        }
-                        else
-                        {
-                            // 如果是文件，确保目录存在后解压
-                            var entryDir = Path.GetDirectoryName(entryPath);
-                            if (!Directory.Exists(entryDir))
-                            {
-                                Directory.CreateDirectory(entryDir);
-                            }
-
-                            // 解压文件（覆盖已存在的文件）
-                            await entry.ExtractToFileAsync(entryPath, true);
-                        }
-
-                        // 更新进度
-                        _ProcessedEntries++;
-                        var progress = (double)_ProcessedEntries / _TotalEntries * 100;
-
-                        // 更新UI（必须通过Dispatcher切换到主线程）
-                        _Dvo.Ratio = Math.Min(progress, 100);
-                        _Dvo.Status = $"正在解压：{entry.FullName} ({_ProcessedEntries}/{_TotalEntries}) ({progress:0.00}%)";
-                    }
-                    catch (Exception ex)
-                    {
-                        _Dvo.Status = $"解压文件 {entry.FullName} 失败：{ex.Message}";
-                        // 单个文件失败不终止整体解压，继续处理下一个
-                        continue;
-                    }
-                }
-            }
-
-            _Dvo.Status = "文件解压完成！";
-            return true;
-        }
-
-        private void Restart()
-        {
-            if (!_AppConfig.AutoStart)
-            {
-                _Dvo.Status = "应用更新成功，请尝试自行启动！";
-                return;
-            }
-
-            _Dvo.Status = "正在重启应用程序...";
-            var path = _AppConfig.InstallPath;
-            Directory.SetCurrentDirectory(path);
-            if (!Path.IsPathRooted(_AppConfig.ExecuteFile))
-            {
-                path = Path.Combine(_AppConfig.InstallPath, _AppConfig.ExecuteFile);
-            }
-
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = path,
-                Arguments = _AppConfig.ExecuteArgs,
-                UseShellExecute = true
-            });
-
-            _Dvo.Status = "应用更新成功！";
-        }
-
-        // 窗口关闭时取消下载
         protected override void OnClosed(EventArgs e)
         {
             _Token?.Cancel();

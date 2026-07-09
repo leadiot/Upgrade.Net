@@ -1,4 +1,4 @@
-﻿using Com.Scm.Upgrade.Config;
+using Com.Scm.Upgrade.Config;
 using System.Windows;
 
 namespace Com.Scm.Upgrade
@@ -26,7 +26,7 @@ namespace Com.Scm.Upgrade
 
                 mainWindow.Init(settings);
             }
-            catch (Exception ex)
+            catch
             {
                 Shutdown();
             }
