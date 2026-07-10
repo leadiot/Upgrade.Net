@@ -120,7 +120,7 @@ namespace Com.Scm.Upgrade
             }
 
             Log("[步骤6/8] 解压文件到安装目录...");
-            var extractResult = ExtractFiles(zipFile, config.InstallPath, config.IgnoreFiles);
+            var extractResult = ExtractFiles(config.InstallPath, zipFile, config.IgnoreFiles);
             Log($"   [成功] 文件解压完成");
             if (extractResult.SkippedCount > 0)
             {
@@ -224,7 +224,7 @@ namespace Com.Scm.Upgrade
             return tempFilePath;
         }
 
-        private ExtractResult ExtractFiles(string zipPath, string installPath, List<string> ignoreFiles = null)
+        private ExtractResult ExtractFiles(string installPath, string zipPath, List<string> ignoreFiles = null)
         {
             var result = new ExtractResult { ProcessedCount = 0, SkippedCount = 0, SkippedFiles = new List<string>() };
 

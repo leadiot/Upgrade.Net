@@ -57,8 +57,8 @@ namespace Com.Scm.Upgrade
                 _AppConfig.InstallPath = AppDomain.CurrentDomain.BaseDirectory;
             }
 
-            _Dvo.Enabled = true;
-            _Dvo.Status = "准备更新...";
+            //_Dvo.Enabled = true;
+            Log("准备更新...");
 
             this.DataContext = _Dvo;
 
@@ -73,19 +73,19 @@ namespace Com.Scm.Upgrade
         private void BtPause_Click(object sender, RoutedEventArgs e)
         {
             _Paused = true;
-            _Dvo.Status = "已暂停";
-            BtStart.IsEnabled = true;
-            BtPause.IsEnabled = false;
+            Log("已暂停");
+            _Dvo.StartEnabled = true;
+            _Dvo.PauseEnabled = false;
             BtStart.Content = "继续";
         }
 
         private void BtCancel_Click(object sender, RoutedEventArgs e)
         {
             _Token?.Cancel();
-            _Dvo.Status = "正在取消...";
-            BtStart.IsEnabled = true;
-            BtPause.IsEnabled = false;
-            BtCancel.IsEnabled = false;
+            Log("正在取消...");
+            _Dvo.StartEnabled = true;
+            _Dvo.PauseEnabled = false;
+            _Dvo.CancelEnabled = false;
         }
 
         private async void Start()
@@ -93,9 +93,9 @@ namespace Com.Scm.Upgrade
             if (_Paused)
             {
                 _Paused = false;
-                BtStart.IsEnabled = false;
-                BtPause.IsEnabled = true;
-                BtCancel.IsEnabled = true;
+                _Dvo.StartEnabled = false;
+                _Dvo.PauseEnabled = true;
+                _Dvo.CancelEnabled = true;
                 return;
             }
 
@@ -105,11 +105,11 @@ namespace Com.Scm.Upgrade
             }
 
             _Token = new CancellationTokenSource();
-            _Dvo.Ratio = 0;
+            _Dvo.Percent = 0;
 
-            BtStart.IsEnabled = false;
-            BtPause.IsEnabled = true;
-            BtCancel.IsEnabled = true;
+            _Dvo.StartEnabled = false;
+            _Dvo.PauseEnabled = true;
+            _Dvo.CancelEnabled = true;
 
             try
             {
@@ -135,7 +135,7 @@ namespace Com.Scm.Upgrade
 
                 await LaunchApplication();
 
-                _Dvo.Status = "升级完成！";
+                Log("升级完成！");
 
                 if (_AppConfig.AutoClose)
                 {
@@ -145,18 +145,18 @@ namespace Com.Scm.Upgrade
             }
             catch (OperationCanceledException)
             {
-                _Dvo.Status = "已取消";
+                Log("已取消");
             }
             catch (Exception ex)
             {
-                _Dvo.Status = $"更新失败：{ex.Message}";
+                Log($"更新失败：{ex.Message}");
                 MessageBox.Show($"更新出错：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
-                BtStart.IsEnabled = true;
-                BtPause.IsEnabled = false;
-                BtCancel.IsEnabled = false;
+                _Dvo.StartEnabled = true;
+                _Dvo.PauseEnabled = false;
+                _Dvo.CancelEnabled = false;
                 _Paused = false;
             }
         }
@@ -165,12 +165,12 @@ namespace Com.Scm.Upgrade
         {
             if (string.IsNullOrEmpty(config.VerInfo?.url))
             {
-                _Dvo.Status = "下载地址为空，无法更新！";
+                Log("下载地址为空，无法更新！");
                 return false;
             }
             if (string.IsNullOrEmpty(config.InstallPath))
             {
-                _Dvo.Status = "安装路径为空，无法更新！";
+                Log("安装路径为空，无法更新！");
                 return false;
             }
             return true;
@@ -178,7 +178,7 @@ namespace Com.Scm.Upgrade
 
         private async Task PrepareInstallDirectory()
         {
-            _Dvo.Status = "[步骤3/8] 准备安装目录...";
+            Log("[步骤3/8] 准备安装目录...");
             await Task.Run(() =>
             {
                 if (!Directory.Exists(_AppConfig.InstallPath))
@@ -186,48 +186,48 @@ namespace Com.Scm.Upgrade
                     Directory.CreateDirectory(_AppConfig.InstallPath);
                 }
             });
-            _Dvo.Status = "[步骤3/8] 安装目录准备完成";
+            Log("[步骤3/8] 安装目录准备完成");
         }
 
         private async Task<string> GetInstallFile()
         {
-            _Dvo.Status = "[步骤4/8] 获取安装文件...";
+            Log("[步骤4/8] 获取安装文件...");
 
             if (_AppConfig.InstallType == InstallType.FromZip)
             {
                 if (!File.Exists(_AppConfig.InstallFile))
                 {
-                    _Dvo.Status = $"[步骤4/8] 错误：指定的本地文件不存在: {_AppConfig.InstallFile}";
+                    Log($"[步骤4/8] 错误：指定的本地文件不存在: {_AppConfig.InstallFile}");
                     return null;
                 }
-                _Dvo.Status = $"[步骤4/8] 使用本地文件: {_AppConfig.InstallFile}";
+                Log($"[步骤4/8] 使用本地文件: {_AppConfig.InstallFile}");
                 return _AppConfig.InstallFile;
             }
             else if (_AppConfig.InstallType == InstallType.FromUrl)
             {
                 if (string.IsNullOrWhiteSpace(_AppConfig.DownloadUrl))
                 {
-                    _Dvo.Status = $"[步骤4/8] 错误：远程下载地址为空";
+                    Log($"[步骤4/8] 错误：远程下载地址为空");
                     return null;
                 }
-                _Dvo.Status = "[步骤4/8] 从远程服务器下载...";
+                Log("[步骤4/8] 从远程服务器下载...");
                 return await DownloadFileAsync(_AppConfig.DownloadUrl);
             }
             else
             {
                 if (File.Exists(_AppConfig.InstallFile))
                 {
-                    _Dvo.Status = $"[步骤4/8] 使用本地文件: {_AppConfig.InstallFile}";
+                    Log($"[步骤4/8] 使用本地文件: {_AppConfig.InstallFile}");
                     return _AppConfig.InstallFile;
                 }
                 else
                 {
                     if (string.IsNullOrWhiteSpace(_AppConfig.DownloadUrl))
                     {
-                        _Dvo.Status = $"[步骤4/8] 错误：远程下载地址为空";
+                        Log($"[步骤4/8] 错误：远程下载地址为空");
                         return null;
                     }
-                    _Dvo.Status = "[步骤4/8] 本地文件不存在，转为远程下载...";
+                    Log("[步骤4/8] 本地文件不存在，转为远程下载...");
                     return await DownloadFileAsync(_AppConfig.DownloadUrl);
                 }
             }
@@ -267,19 +267,19 @@ namespace Com.Scm.Upgrade
                         if (_TotalBytes > 0)
                         {
                             var progress = (_DownloadedBytes * 100.0) / _TotalBytes;
-                            _Dvo.Ratio = Math.Min(progress, 100);
-                            _Dvo.Status = $"[步骤4/8] 下载中：{FormatFileSize(_DownloadedBytes)} / {FormatFileSize(_TotalBytes)} ({progress:0.00}%)";
+                            _Dvo.Percent = Math.Min(progress, 100);
+                            Log($"[步骤4/8] 下载中：{FormatFileSize(_DownloadedBytes)} / {FormatFileSize(_TotalBytes)} ({progress:0.00}%)");
                         }
                         else
                         {
-                            _Dvo.Status = $"[步骤4/8] 下载中：{FormatFileSize(_DownloadedBytes)}";
+                            Log($"[步骤4/8] 下载中：{FormatFileSize(_DownloadedBytes)}");
                         }
                     }
                 }
             }
 
-            _Dvo.Ratio = 100;
-            _Dvo.Status = "[步骤4/8] 文件下载完成";
+            _Dvo.Percent = 100;
+            Log("[步骤4/8] 文件下载完成");
             return tempFilePath;
         }
 
@@ -296,10 +296,10 @@ namespace Com.Scm.Upgrade
                 return null;
             }
 
-            _Dvo.Status = "[步骤4/8] 复制离线文件...";
+            Log("[步骤4/8] 复制离线文件...");
             var name = Path.GetFileName(file);
             var dstFile = Path.Combine(_AppConfig.InstallPath, name);
-            _Dvo.Status = "[步骤4/8] 离线文件复制完成";
+            Log("[步骤4/8] 离线文件复制完成");
 
             await Task.Run(() =>
             {
@@ -310,30 +310,30 @@ namespace Com.Scm.Upgrade
                 {
                     for (int i = seconds; i > 0; i--)
                     {
-                        _Dvo.Status = $"[步骤4/8] 升级程序将在 {i} 秒后执行...";
+                        Log($"[步骤4/8] 升级程序将在 {i} 秒后执行...");
                         Thread.Sleep(1000);
                     }
                 }
             });
 
-            _Dvo.Status = "[步骤4/8] 开始执行升级任务";
+            Log("[步骤4/8] 开始执行升级任务");
             return dstFile;
         }
 
         private async Task BackupFiles()
         {
-            _Dvo.Ratio = 0;
-            _Dvo.Status = "[步骤5/8] 备份现有文件...";
+            _Dvo.Percent = 0;
+            Log("[步骤5/8] 备份现有文件...");
 
             if (_AppConfig.Backup == null || string.IsNullOrEmpty(_AppConfig.Backup.Path))
             {
-                _Dvo.Status = "[步骤5/8] 未配置备份，跳过";
+                Log("[步骤5/8] 未配置备份，跳过");
                 return;
             }
 
             if (!Directory.Exists(_AppConfig.InstallPath))
             {
-                _Dvo.Status = "[步骤5/8] 安装目录不存在，跳过备份";
+                Log("[步骤5/8] 安装目录不存在，跳过备份");
                 return;
             }
 
@@ -351,11 +351,11 @@ namespace Com.Scm.Upgrade
 
                     if (totalFiles == 0)
                     {
-                        _Dvo.Status = "[步骤5/8] 安装目录为空，跳过备份";
+                        Log("[步骤5/8] 安装目录为空，跳过备份");
                         return;
                     }
 
-                    _Dvo.Status = $"[步骤5/8] 准备备份 {totalFiles} 个文件...";
+                    Log($"[步骤5/8] 准备备份 {totalFiles} 个文件...");
 
                     using (var zipStream = File.Create(backupFilePath))
                     using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
@@ -378,24 +378,24 @@ namespace Com.Scm.Upgrade
                             }
 
                             var progress = ((processed + skipped) * 100.0) / totalFiles;
-                            _Dvo.Ratio = Math.Min(progress, 100);
-                            _Dvo.Status = $"[步骤5/8] 备份中：{processed}/{totalFiles} ({progress:0.00}%)";
+                            _Dvo.Percent = Math.Min(progress, 100);
+                            Log($"[步骤5/8] 备份中：{processed}/{totalFiles} ({progress:0.00}%)");
                         }
                     }
 
-                    _Dvo.Status = $"[步骤5/8] 备份完成: {backupFilePath}";
+                    Log($"[步骤5/8] 备份完成: {backupFilePath}");
                 }
                 catch (Exception ex)
                 {
-                    _Dvo.Status = $"[步骤5/8] 备份失败: {ex.Message}";
+                    Log($"[步骤5/8] 备份失败: {ex.Message}");
                 }
             });
         }
 
         private async Task ExtractFiles(string zipPath)
         {
-            _Dvo.Ratio = 0;
-            _Dvo.Status = "[步骤6/8] 解压文件...";
+            _Dvo.Percent = 0;
+            Log("[步骤6/8] 解压文件...");
 
             await Task.Run(() =>
             {
@@ -407,11 +407,11 @@ namespace Com.Scm.Upgrade
 
                     if (_TotalEntries == 0)
                     {
-                        _Dvo.Status = "[步骤6/8] 压缩包为空";
+                        Log("[步骤6/8] 压缩包为空");
                         return;
                     }
 
-                    _Dvo.Status = $"[步骤6/8] 准备解压 {_TotalEntries} 个文件...";
+                    Log($"[步骤6/8] 准备解压 {_TotalEntries} 个文件...");
 
                     foreach (var entry in entries)
                     {
@@ -444,13 +444,13 @@ namespace Com.Scm.Upgrade
 
                         _ProcessedEntries++;
                         var progress = (_ProcessedEntries * 100.0) / _TotalEntries;
-                        _Dvo.Ratio = Math.Min(progress, 100);
-                        _Dvo.Status = $"[步骤6/8] 解压中：{_ProcessedEntries}/{_TotalEntries} ({progress:0.00}%)";
+                        _Dvo.Percent = Math.Min(progress, 100);
+                        Log($"[步骤6/8] 解压中：{_ProcessedEntries}/{_TotalEntries} ({progress:0.00}%)");
                     }
                 }
             });
 
-            _Dvo.Status = "[步骤6/8] 文件解压完成";
+            Log("[步骤6/8] 文件解压完成");
         }
 
         private async Task DeleteOfflineFile(string file)
@@ -462,7 +462,7 @@ namespace Com.Scm.Upgrade
                     try
                     {
                         File.Delete(file);
-                        _Dvo.Status = $"[步骤6/8] 删除离线文件: {file}";
+                        Log($"[步骤6/8] 删除离线文件: {file}");
                     }
                     catch { }
                 });
@@ -471,26 +471,26 @@ namespace Com.Scm.Upgrade
 
         private async Task CleanupTempFile(string zipFile, bool isDownloaded)
         {
-            _Dvo.Status = "[步骤7/8] 清理临时文件...";
+            Log("[步骤7/8] 清理临时文件...");
 
             if (isDownloaded && File.Exists(zipFile))
             {
                 await Task.Run(() => File.Delete(zipFile));
-                _Dvo.Status = "[步骤7/8] 下载文件已清理";
+                Log("[步骤7/8] 下载文件已清理");
             }
             else
             {
-                _Dvo.Status = "[步骤7/8] 使用本地文件，保留原文件";
+                Log("[步骤7/8] 使用本地文件，保留原文件");
             }
         }
 
         private async Task LaunchApplication()
         {
-            _Dvo.Status = "[步骤8/8] 启动应用程序...";
+            Log("[步骤8/8] 启动应用程序...");
 
             if (_AppConfig.Launch == null || string.IsNullOrEmpty(_AppConfig.Launch.File))
             {
-                _Dvo.Status = "[步骤8/8] 未配置启动程序，跳过";
+                Log("[步骤8/8] 未配置启动程序，跳过");
                 return;
             }
 
@@ -511,11 +511,11 @@ namespace Com.Scm.Upgrade
                     Process.Start(processStartInfo);
                 });
 
-                _Dvo.Status = $"[步骤8/8] 启动程序: {_AppConfig.Launch.File}";
+                Log($"[步骤8/8] 启动程序: {_AppConfig.Launch.File}");
             }
             else
             {
-                _Dvo.Status = $"[步骤8/8] 警告：执行文件不存在: {executePath}";
+                Log($"[步骤8/8] 警告：执行文件不存在: {executePath}");
             }
         }
 
@@ -535,6 +535,11 @@ namespace Com.Scm.Upgrade
         {
             _Token?.Cancel();
             base.OnClosed(e);
+        }
+
+        private void Log(string message)
+        {
+            _Dvo.Status = message;
         }
     }
 }

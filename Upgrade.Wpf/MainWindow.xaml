@@ -35,11 +35,11 @@
     </Window.Resources>
     <Grid Margin="0">
         <Grid.RowDefinitions>
-                <RowDefinition Height="0"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="60"/>
-                <RowDefinition Height="80"/>
-            </Grid.RowDefinitions>
+            <RowDefinition Height="0"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="60"/>
+            <RowDefinition Height="80"/>
+        </Grid.RowDefinitions>
 
         <Border Grid.Row="0" Background="{StaticResource BgSecondary}" CornerRadius="0">
             <Grid>
@@ -101,7 +101,7 @@
                            Text="{Binding Status}"/>
                 <ProgressBar x:Name="PbInfo"
                              Grid.Row="1"
-                             Value="{Binding Ratio}"
+                             Value="{Binding Percent}"
                              Maximum="100"
                              Style="{StaticResource ModernProgressBar}"/>
             </Grid>
@@ -111,17 +111,18 @@
             <Button x:Name="BtStart"
                     Click="BtStart_Click"
                     Margin="8"
-                    IsEnabled="{Binding Enabled}"
+                    IsEnabled="{Binding StartEnabled}"
                     Style="{StaticResource ModernButtonStyle}">开始</Button>
             <Button x:Name="BtPause"
                     Click="BtPause_Click"
                     Margin="8"
-                    IsEnabled="{Binding Enabled}"
+                    IsEnabled="{Binding PauseEnabled}"
                     Style="{StaticResource ModernButtonStyle}"
                     Tag="Secondary">暂停</Button>
             <Button x:Name="BtCancel"
                     Click="BtCancel_Click"
                     Margin="8"
+                    IsEnabled="{Binding CancelEnabled}"
                     Style="{StaticResource ModernButtonStyle}"
                     Tag="Danger">取消</Button>
         </StackPanel>
