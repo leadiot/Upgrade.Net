@@ -1,12 +1,10 @@
 ﻿using Com.Scm.Upgrade.Config;
-using Com.Scm.Upgrade.Dvo;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Threading;
 
 namespace Com.Scm.Upgrade
 {
@@ -17,67 +15,48 @@ namespace Com.Scm.Upgrade
         public const int PATCH = 0;
         public const int BUILD = 1;
 
-        private MainWindowDvo _Dvo;
+        private UpgradeWindowDvo _Dvo;
         private UpgradeConfig _AppConfig;
         private CancellationTokenSource _Token;
         private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
 
         private bool _Paused;
-        private long _DownloadedBytes;
-        private long _TotalBytes;
-        private int _TotalEntries;
-        private int _ProcessedEntries;
-
-        private DispatcherTimer _progressTimer;
-        private double _currentProgress = 0;
+        private bool _Running;
 
         public UpgradeWindow()
         {
             InitializeComponent();
-
-            var title = $"升级程序 v{MAJOR}.{MINOR}.{PATCH}.{BUILD}";
-            this.Title = title;
-            this.TbTitle.Text = title;
         }
 
         public void Init(UpgradeConfig appConfig)
         {
             _AppConfig = appConfig;
 
-            _Dvo = new MainWindowDvo();
+            _Dvo = new UpgradeWindowDvo();
 
-            if (!string.IsNullOrEmpty(_AppConfig.Title))
-            {
-                this.Title = _AppConfig.Title;
-            }
+            var title = $"Upgrade.Wpf 升级 v{MAJOR}.{MINOR}.{PATCH}.{BUILD}";
+            this.Title = title;
+            this.TbTitle.Text = title;
 
-            _Dvo.Title = appConfig.Title;
-            _Dvo.Version = appConfig.OldVersion + " → " + appConfig.NewVersion;
+            _Dvo.Title = string.IsNullOrEmpty(_AppConfig.Title) ? title : appConfig.Title;
+            _Dvo.Subtitle = appConfig.OldVersion + " → " + appConfig.NewVersion;
 
-            if (appConfig.AppInfo != null)
-            {
-                _Dvo.AppInfo = appConfig.AppInfo.content;
-            }
-            if (appConfig.VerInfo == null)
-            {
-                _Dvo.VerInfo = "版本信息为空！";
-                return;
-            }
-            _Dvo.VerInfo = appConfig.VerInfo.remark;
+            _Dvo.AppInfo = appConfig.AppInfo ?? "应用简介为空";
+            _Dvo.VerInfo = appConfig.VerInfo ?? "版本信息为空！";
 
             if (string.IsNullOrEmpty(_AppConfig.InstallPath))
             {
                 _AppConfig.InstallPath = AppDomain.CurrentDomain.BaseDirectory;
             }
 
-            _Dvo.StartEnabled = true;
-            _Dvo.PauseEnabled = false;
-            _Dvo.CancelEnabled = false;
             Log("准备更新...");
 
             this.DataContext = _Dvo;
 
-            Start();
+            if (_AppConfig.AutoStart)
+            {
+                Start();
+            }
         }
 
         // 1. 标题栏拖拽逻辑
@@ -90,7 +69,13 @@ namespace Com.Scm.Upgrade
         }
 
         // 2. 右上角关闭按钮
-        private void BtnCloseWindow_Click(object sender, RoutedEventArgs e)
+        private void BtCloseWindow_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+
+        // 5. 稍后提醒
+        private void BtLater_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
         }
@@ -101,65 +86,24 @@ namespace Com.Scm.Upgrade
             BtStart.IsEnabled = false;
             BtStart.Content = "更新中...";
             BtLater.Visibility = Visibility.Collapsed;
-            ProgressArea.Visibility = Visibility.Visible;
+            //ProgressArea.Visibility = Visibility.Visible;
 
-            _currentProgress = 0;
-            _progressTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
-            _progressTimer.Tick += (s, args) =>
-            {
-                _currentProgress += new Random().Next(3, 15);
-                if (_currentProgress > 100) _currentProgress = 100;
-
-                PbInfo.Value = _currentProgress;
-                TbInfo.Text = $"正在下载并应用更新... {(int)_currentProgress}%";
-
-                if (_currentProgress >= 100)
-                {
-                    _progressTimer.Stop();
-                    FinishUpdate();
-                }
-            };
-            _progressTimer.Start();
+            Start();
         }
 
-        // 4. 更新完成逻辑
-        private void FinishUpdate()
+        private void BtLaunch_Click(object sender, RoutedEventArgs e)
         {
-            TbInfo.Text = "正在验证文件完整性...";
-
-            var delayTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(800) };
-            delayTimer.Tick += (s, args) =>
+            var executePath = Path.Combine(_AppConfig.InstallPath, _AppConfig.Launch.File);
+            if (File.Exists(executePath))
             {
-                delayTimer.Stop();
-
-                ProgressArea.Visibility = Visibility.Collapsed;
-                SuccessStatus.Visibility = Visibility.Visible;
-
-                BtStart.Content = "重启应用";
-                BtStart.IsEnabled = true;
-                BtStart.Background = FindResource("SuccessGreen") as System.Windows.Media.SolidColorBrush;
-
-                BtStart.Click -= BtStart_Click;
-                BtStart.Click += (sender, e) =>
-                {
-                    MessageBox.Show("🚀 模拟重启：应用将关闭并加载新版本！", "提示",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
-                    Application.Current.Shutdown();
-                };
-            };
-            delayTimer.Start();
-        }
-
-        // 5. 稍后提醒
-        private void BtLater_Click(object sender, RoutedEventArgs e)
-        {
-            this.Close();
+                Execute(_AppConfig.InstallPath, executePath, _AppConfig.Launch.Args);
+            }
         }
 
         #region 公共方法
         private void Log(string message)
         {
-            _Dvo.Status = message;
+            _Dvo.Notice = message;
         }
 
         private string FormatFileSize(long size)
@@ -173,35 +117,37 @@ namespace Com.Scm.Upgrade
             }
             return size + units[i];
         }
+
+        private void Execute(string path, string file, string args)
+        {
+            var processStartInfo = new ProcessStartInfo
+            {
+                FileName = file,
+                Arguments = args ?? string.Empty,
+                WorkingDirectory = path,
+                UseShellExecute = true,
+                CreateNoWindow = true
+            };
+            Process.Start(processStartInfo);
+        }
         #endregion
 
         #region 核心逻辑
         private async void Start()
         {
-            if (_Paused)
+            if (_Running)
             {
-                _Paused = false;
-                _Dvo.StartEnabled = false;
-                _Dvo.PauseEnabled = true;
-                _Dvo.CancelEnabled = true;
                 return;
             }
 
-            if (!ValidateConfig(_AppConfig))
-            {
-                return;
-            }
+            _Running = true;
 
             _Token = new CancellationTokenSource();
-            _Dvo.Ratio = 0;
-
-            _Dvo.StartEnabled = false;
-            _Dvo.PauseEnabled = true;
-            _Dvo.CancelEnabled = true;
+            _Dvo.Percent = 0;
 
             try
             {
-                await PrepareInstallDirectory();
+                PrepareInstallDirectory();
 
                 var zipFile = await GetInstallFile();
                 if (zipFile == null)
@@ -225,56 +171,38 @@ namespace Com.Scm.Upgrade
 
                 Log("升级完成！");
 
-                if (_AppConfig.AutoClose)
+                if (!_AppConfig.AutoClose)
                 {
-                    await Task.Delay(1000);
-                    Close();
+                    BtStart.Visibility = Visibility.Collapsed;
+                    BtLaunch.Visibility = Visibility.Visible;
+                    return;
                 }
+
+                Thread.Sleep(1000);
+                this.Close();
             }
             catch (OperationCanceledException)
             {
                 Log("已取消");
+                return;
             }
             catch (Exception ex)
             {
                 Log($"更新失败：{ex.Message}");
-                MessageBox.Show($"更新出错：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                _Dvo.StartEnabled = true;
-                _Dvo.PauseEnabled = false;
-                _Dvo.CancelEnabled = false;
-                _Paused = false;
-                //BtStart.Content = "开始";
+                BtLater.Visibility = Visibility.Visible;
+                BtStart.Visibility = Visibility.Visible;
+                BtLaunch.Visibility = Visibility.Collapsed;
+                return;
             }
         }
 
-        private bool ValidateConfig(UpgradeConfig config)
-        {
-            if (string.IsNullOrEmpty(config.VerInfo?.url))
-            {
-                Log("下载地址为空，无法更新！");
-                return false;
-            }
-            if (string.IsNullOrEmpty(config.InstallPath))
-            {
-                Log("安装路径为空，无法更新！");
-                return false;
-            }
-            return true;
-        }
-
-        private async Task PrepareInstallDirectory()
+        private void PrepareInstallDirectory()
         {
             Log("[步骤3/8] 准备安装目录...");
-            await Task.Run(() =>
+            if (!Directory.Exists(_AppConfig.InstallPath))
             {
-                if (!Directory.Exists(_AppConfig.InstallPath))
-                {
-                    Directory.CreateDirectory(_AppConfig.InstallPath);
-                }
-            });
+                Directory.CreateDirectory(_AppConfig.InstallPath);
+            }
             Log("[步骤3/8] 安装目录准备完成");
         }
 
@@ -295,7 +223,7 @@ namespace Com.Scm.Upgrade
             else if (_AppConfig.InstallType == InstallType.FromUrl)
             {
                 Log("[步骤4/8] 从远程服务器下载...");
-                return await DownloadFileAsync(_AppConfig.VerInfo.url);
+                return await DownloadFileAsync(_AppConfig.DownloadUrl);
             }
             else
             {
@@ -307,7 +235,7 @@ namespace Com.Scm.Upgrade
                 else
                 {
                     Log("[步骤4/8] 本地文件不存在，转为远程下载...");
-                    return await DownloadFileAsync(_AppConfig.VerInfo.url);
+                    return await DownloadFileAsync(_AppConfig.DownloadUrl);
                 }
             }
         }
@@ -320,8 +248,8 @@ namespace Com.Scm.Upgrade
             {
                 response.EnsureSuccessStatusCode();
 
-                _TotalBytes = response.Content.Headers.ContentLength ?? -1;
-                _DownloadedBytes = 0;
+                var totalBytes = response.Content.Headers.ContentLength ?? -1;
+                var downloadedBytes = 0;
 
                 using (var stream = await response.Content.ReadAsStreamAsync(_Token.Token))
                 using (var fileStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, true))
@@ -337,23 +265,23 @@ namespace Com.Scm.Upgrade
                         }
 
                         await fileStream.WriteAsync(buffer, 0, bytesRead, _Token.Token);
-                        _DownloadedBytes += bytesRead;
+                        downloadedBytes += bytesRead;
 
-                        if (_TotalBytes > 0)
+                        if (totalBytes > 0)
                         {
-                            var progress = (_DownloadedBytes * 100.0) / _TotalBytes;
-                            _Dvo.Ratio = Math.Min(progress, 100);
-                            Log($"[步骤4/8] 下载中：{FormatFileSize(_DownloadedBytes)} / {FormatFileSize(_TotalBytes)} ({progress:0.00}%)");
+                            var progress = (downloadedBytes * 100.0) / totalBytes;
+                            _Dvo.Percent = Math.Min(progress, 100);
+                            Log($"[步骤4/8] 下载中：{FormatFileSize(downloadedBytes)} / {FormatFileSize(totalBytes)} ({progress:0.00}%)");
                         }
                         else
                         {
-                            Log($"[步骤4/8] 下载中：{FormatFileSize(_DownloadedBytes)}");
+                            Log($"[步骤4/8] 下载中：{FormatFileSize(downloadedBytes)}");
                         }
                     }
                 }
             }
 
-            _Dvo.Ratio = 100;
+            _Dvo.Percent = 100;
             Log("[步骤4/8] 文件下载完成");
             return tempFilePath;
         }
@@ -397,7 +325,7 @@ namespace Com.Scm.Upgrade
 
         private async Task BackupFiles()
         {
-            _Dvo.Ratio = 0;
+            _Dvo.Percent = 0;
             Log("[步骤5/8] 备份现有文件...");
 
             if (_AppConfig.Backup == null || string.IsNullOrEmpty(_AppConfig.Backup.Path))
@@ -453,7 +381,7 @@ namespace Com.Scm.Upgrade
                             }
 
                             var progress = ((processed + skipped) * 100.0) / totalFiles;
-                            _Dvo.Ratio = Math.Min(progress, 100);
+                            _Dvo.Percent = Math.Min(progress, 100);
                             Log($"[步骤5/8] 备份中：{processed}/{totalFiles} ({progress:0.00}%)");
                         }
                     }
@@ -469,7 +397,7 @@ namespace Com.Scm.Upgrade
 
         private async Task ExtractFiles(string zipPath)
         {
-            _Dvo.Ratio = 0;
+            _Dvo.Percent = 0;
             Log("[步骤6/8] 解压文件...");
 
             await Task.Run(() =>
@@ -477,16 +405,16 @@ namespace Com.Scm.Upgrade
                 using (var archive = ZipFile.OpenRead(zipPath))
                 {
                     var entries = archive.Entries.ToList();
-                    _TotalEntries = entries.Count;
-                    _ProcessedEntries = 0;
+                    var totalEntries = entries.Count;
+                    var processedEntries = 0;
 
-                    if (_TotalEntries == 0)
+                    if (totalEntries == 0)
                     {
                         Log("[步骤6/8] 压缩包为空");
                         return;
                     }
 
-                    Log($"[步骤6/8] 准备解压 {_TotalEntries} 个文件...");
+                    Log($"[步骤6/8] 准备解压 {totalEntries} 个文件...");
 
                     foreach (var entry in entries)
                     {
@@ -494,7 +422,7 @@ namespace Com.Scm.Upgrade
                         {
                             var dirPath = Path.Combine(_AppConfig.InstallPath, entry.FullName);
                             Directory.CreateDirectory(dirPath);
-                            _ProcessedEntries++;
+                            processedEntries++;
                             continue;
                         }
 
@@ -517,10 +445,10 @@ namespace Com.Scm.Upgrade
                             entry.ExtractToFile(destPath, true);
                         }
 
-                        _ProcessedEntries++;
-                        var progress = (_ProcessedEntries * 100.0) / _TotalEntries;
-                        _Dvo.Ratio = Math.Min(progress, 100);
-                        Log($"[步骤6/8] 解压中：{_ProcessedEntries}/{_TotalEntries} ({progress:0.00}%)");
+                        processedEntries++;
+                        var progress = (processedEntries * 100.0) / totalEntries;
+                        _Dvo.Percent = Math.Min(progress, 100);
+                        Log($"[步骤6/8] 解压中：{processedEntries}/{totalEntries} ({progress:0.00}%)");
                     }
                 }
             });
@@ -575,15 +503,7 @@ namespace Com.Scm.Upgrade
             {
                 await Task.Run(() =>
                 {
-                    var processStartInfo = new ProcessStartInfo
-                    {
-                        FileName = executePath,
-                        Arguments = _AppConfig.Launch.Args ?? string.Empty,
-                        WorkingDirectory = _AppConfig.InstallPath,
-                        UseShellExecute = true,
-                        CreateNoWindow = true
-                    };
-                    Process.Start(processStartInfo);
+                    Execute(_AppConfig.InstallPath, executePath, _AppConfig.Launch.Args);
                 });
 
                 Log($"[步骤8/8] 启动程序: {_AppConfig.Launch.File}");

@@ -1,5 +1,4 @@
-﻿using Com.Scm.Upgrade.Dto;
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 
 namespace Com.Scm.Upgrade.Config
@@ -23,6 +22,13 @@ namespace Com.Scm.Upgrade.Config
         public string Title { get; set; }
 
         /// <summary>
+        /// 升级程序是否自动执行更新
+        /// 默认：false
+        /// 选项：可选
+        /// </summary>
+        public bool AutoStart { get; set; }
+
+        /// <summary>
         /// 升级程序是否在升级完成后自动退出
         /// 默认：false
         /// 选项：可选
@@ -31,8 +37,8 @@ namespace Com.Scm.Upgrade.Config
 
         /// <summary>
         /// 待升级程序安装路径
-        /// 默认：空
-        /// 选项：必需
+        /// 默认：当前所在目录
+        /// 选项：可选
         /// </summary>
         public string InstallPath { get; set; }
 
@@ -90,14 +96,14 @@ namespace Com.Scm.Upgrade.Config
         /// 默认：null
         /// 选项：可选
         /// </summary>
-        public ScmAppInfo AppInfo { get; set; } = new ScmAppInfo();
+        public string AppInfo { get; set; }
 
         /// <summary>
         /// 版本信息配置，用于版本信息的展示
         /// 默认：null
         /// 选项：可选
         /// </summary>
-        public ScmVerInfo VerInfo { get; set; } = new ScmVerInfo();
+        public string VerInfo { get; set; }
 
         public string OldVersion { get; set; }
         public string NewVersion { get; set; }
@@ -106,9 +112,7 @@ namespace Com.Scm.Upgrade.Config
         {
             Title = "Upgrade.Wpf更新";
 
-            VerInfo.ver_info = "1.0.0";
-            VerInfo.ver_date = "2024-01-01";
-            VerInfo.remark = "这是版本更新说明！";
+            VerInfo = "这是版本更新说明！";
         }
 
         public static UpgradeConfig Load()

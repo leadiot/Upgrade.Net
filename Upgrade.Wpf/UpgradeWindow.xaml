@@ -31,13 +31,10 @@
         <!-- 标准关闭悬停红 -->
 
         <!-- 按钮样式 -->
-        <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource ChinaBlue}"/>
-            <Setter Property="Foreground" Value="White"/>
+        <Style x:Key="BaseButton" TargetType="Button">
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="24,9"/>
-            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -49,6 +46,7 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="{StaticResource ChinaBlueLight}"/>
+                                <Setter Property="Foreground" Value="White"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="border" Property="Background" Value="#A0B4CC"/>
@@ -59,34 +57,24 @@
             </Setter>
         </Style>
 
-        <Style x:Key="SecondaryButton" TargetType="Button">
+        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
+            <Setter Property="Background" Value="{StaticResource ChinaBlue}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{StaticResource TextSub}"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="24,9"/>
             <Setter Property="BorderBrush" Value="#E2E8F0"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource ChinaBluePale}"/>
-                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource ChinaBlueLight}"/>
-                                <Setter Property="Foreground" Value="{StaticResource ChinaBlue}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+        </Style>
+
+        <Style x:Key="SuccessButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
+            <Setter Property="Background" Value="{StaticResource SuccessGreen}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="1"/>
         </Style>
     </Window.Resources>
 
@@ -118,10 +106,10 @@
                                VerticalAlignment="Center" Margin="12,0,0,0" Opacity="0.9"/>
 
                     <!-- 关闭按钮 -->
-                    <Button x:Name="BtnCloseWindow" Content="✕" Width="46" Height="32" 
+                    <Button x:Name="BtCloseWindow" Content="✕" Width="46" Height="32" 
                             HorizontalAlignment="Right" VerticalAlignment="Top"
                             Background="Transparent" BorderThickness="0" Foreground="White"
-                            FontSize="14" Cursor="Hand" Click="BtnCloseWindow_Click">
+                            FontSize="14" Cursor="Hand" Click="BtCloseWindow_Click">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="border" Background="Transparent">
@@ -143,12 +131,12 @@
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <Border Width="48" Height="48" Background="#33FFFFFF" CornerRadius="8" 
                             BorderBrush="#4DFFFFFF" BorderThickness="1">
-                        <Image Source="/Resources/logo.ico" Width="24" Height="24" 
+                        <Image Source="/Resources/logo.ico" Width="32" Height="32" 
                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
                         <TextBlock Text="{Binding Title}" Foreground="White" FontSize="17" FontWeight="SemiBold"/>
-                        <TextBlock Text="{Binding Version}" Foreground="#E6FFFFFF" FontSize="12" Margin="0,3,0,0"/>
+                        <TextBlock Text="{Binding Subtitle}" Foreground="#E6FFFFFF" FontSize="12" Margin="0,3,0,0"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -175,9 +163,12 @@
                             VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <ScrollViewer Grid.Row="1" Margin="0,0,0,24" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="200">
-                        <TextBlock Text="{Binding VerInfo}" TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource TextSub}"/>
-                    </ScrollViewer>
+                    <Border Grid.Row="1" Margin="0,0,0,24" Background="{StaticResource ChinaBluePale}" Padding="16,14" CornerRadius="0,6,6,0" 
+                            BorderBrush="{StaticResource ChinaBlue}" BorderThickness="3,0,0,0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <TextBlock Text="{Binding VerInfo}" TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource TextSub}"/>
+                        </ScrollViewer>
+                    </Border>
 
                     <!-- 应用简介 -->
                     <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,12">
@@ -191,15 +182,11 @@
                             VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <Border Grid.Row="3" Background="{StaticResource ChinaBluePale}" Padding="16,14" CornerRadius="0,6,6,0" 
+                    <Border Grid.Row="3" Margin="0,0,0,24" Background="{StaticResource ChinaBluePale}" Padding="16,14" CornerRadius="0,6,6,0" 
                             BorderBrush="{StaticResource ChinaBlue}" BorderThickness="3,0,0,0">
-                        <TextBlock
-                            Text="{Binding AppInfo}" 
-                            Foreground="{StaticResource TextSub}"
-                            FontSize="13"
-                            TextWrapping="Wrap"
-                            LineHeight="22"
-                            Height="80"/>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <TextBlock Text="{Binding AppInfo}" TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource TextSub}"/>
+                        </ScrollViewer>
                     </Border>
 
                     <!-- 进度条 -->
@@ -211,13 +198,12 @@
                             Background="#E2E8F0"
                             BorderThickness="0"
                             Maximum="100"
-                            Value="{Binding Ratio}"/>
+                            Value="{Binding Percent}"/>
                         <TextBlock
                             x:Name="TbInfo" 
-                            Text="{Binding Status}"
+                            Text="{Binding Notice}"
                             Foreground="{StaticResource TextSub}" 
                             FontSize="12"
-                            HorizontalAlignment="Right"
                             Margin="0,8,0,0"/>
                     </StackPanel>
                 </Grid>
@@ -227,7 +213,7 @@
             <Border Grid.Row="3" BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" Background="#FAFBFC" Padding="16,24"
                     CornerRadius="0,0,8,8">
                 <Grid>
-                    <StackPanel x:Name="SuccessStatus" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel x:Name="SuccessStatus" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
                         <Path Data="M 9,16.17 4.83,12 3.41,13.41 9,19 21,7 19.59,5.59 Z" 
                               Fill="{StaticResource SuccessGreen}" Width="24" Height="24" VerticalAlignment="Center"/>
                         <TextBlock Text="更新完成，重启后生效" Foreground="{StaticResource SuccessGreen}" 
@@ -239,13 +225,21 @@
                             x:Name="BtLater"
                             Content="稍后提醒"
                             Style="{StaticResource SecondaryButton}" 
-                            Margin="0,0,12,0"
+                            Margin="12,0,0,0"
                             Click="BtLater_Click"/>
                         <Button
                             x:Name="BtStart"
                             Content="立即更新"
                             Style="{StaticResource PrimaryButton}" 
+                            Margin="12,0,0,0"
                             Click="BtStart_Click"/>
+                        <Button
+                            x:Name="BtLaunch"
+                            Content="打开应用"
+                            Style="{StaticResource SuccessButton}" 
+                            Margin="12,0,0,0"
+                            Click="BtLaunch_Click"
+                            Visibility="Collapsed"/>
                     </StackPanel>
                 </Grid>
             </Border>
