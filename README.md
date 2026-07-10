@@ -67,31 +67,30 @@ Upgrade.Net 是一个轻量级的 Windows 应用程序升级解决方案，支�
 
 ```json
 {
-  "title": "应用更新",
-  "installPath": "D:\\app",
-  "installType": "Auto",
-  "installFile": "D:\\local\\update.zip",
-  "downloadUrl": "http://example.com/update.zip",
-  "autoClose": true,
+  "icon": "your_icon.ico",
+  "title": "your_app_title",
+  "oldVersion": "1.0.0",
+  "newVersion": "2.0.0",
+  "autoStart": true,
+  "autoClose": false,
+  "installPath": "your_app_install_path",
+  "installType": 0,
+  "installFile": "your_install_file_path",
+  "downloadUrl": "your_download_url",
   "ignoreFiles": ["log", "temp", "database"],
   "launch": {
     "command": "dotnet MyApp.dll",
     "args": "--environment Production"
   },
   "backup": {
-    "path": "D:\\backup"
+    "path": "your_backup_path"
   },
   "offline": {
-    "file": "D:\\offline\\offline.html",
+    "file": "your_offline_file_path",
     "time": 10
   },
-  "appInfo": {
-    "types": 0,
-    "code": "app_code",
-    "name": "应用名称",
-    "content": "应用描述"
-  },
-  "verInfo": "版本更新说明内容，支持较长文本自动滚动"
+  "appInfo": "应用描述，支持较长文本自动滚动",
+  "verInfo": "更新事项，支持较长文本自动滚动"
 }
 ```
 

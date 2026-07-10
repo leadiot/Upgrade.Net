@@ -67,31 +67,30 @@ Upgrade.Net is a lightweight Windows application upgrade solution that supports 
 
 ```json
 {
-  "title": "Application Update",
-  "installPath": "D:\\app",
-  "installType": "Auto",
-  "installFile": "D:\\local\\update.zip",
-  "downloadUrl": "http://example.com/update.zip",
-  "autoClose": true,
+  "icon": "your_icon.ico",
+  "title": "your_app_title",
+  "oldVersion": "1.0.0",
+  "newVersion": "2.0.0",
+  "autoStart": true,
+  "autoClose": false,
+  "installPath": "your_app_install_path",
+  "installType": 0,
+  "installFile": "your_install_file_path",
+  "downloadUrl": "your_download_url",
   "ignoreFiles": ["log", "temp", "database"],
   "launch": {
     "command": "dotnet MyApp.dll",
     "args": "--environment Production"
   },
   "backup": {
-    "path": "D:\\backup"
+    "path": "your_backup_path"
   },
   "offline": {
-    "file": "D:\\offline\\offline.html",
+    "file": "your_offline_file_path",
     "time": 10
   },
-  "appInfo": {
-    "types": 0,
-    "code": "app_code",
-    "name": "Application Name",
-    "content": "Application Description"
-  },
-  "verInfo": "Version update description content with auto-scroll support"
+  "appInfo": "your_app_description",
+  "verInfo": "your_app_version_info"
 }
 ```
 
