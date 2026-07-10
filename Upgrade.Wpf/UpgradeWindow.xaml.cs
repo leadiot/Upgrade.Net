@@ -172,7 +172,7 @@ namespace Com.Scm.Upgrade
                 {
                     if (process != null)
                     {
-                        Log($"🔹 命令进程已启动，PID: {process.Id}");
+                        Log($"🔹 命令进程已启动，PID：{process.Id}");
 
                         var outputReader = process.StandardOutput.ReadToEndAsync();
                         var errorReader = process.StandardError.ReadToEndAsync();
@@ -184,23 +184,23 @@ namespace Com.Scm.Upgrade
 
                         if (!string.IsNullOrEmpty(output))
                         {
-                            Log($"📋 命令输出: {output.Trim().Substring(0, Math.Min(200, output.Length))}");
+                            Log($"📋 命令输出：{output.Trim().Substring(0, Math.Min(200, output.Length))}");
                         }
                         if (!string.IsNullOrEmpty(error))
                         {
-                            Log($"⚠️ 命令错误: {error.Trim().Substring(0, Math.Min(200, error.Length))}");
+                            Log($"⚠️ 命令错误：{error.Trim().Substring(0, Math.Min(200, error.Length))}");
                         }
 
                         if (exited)
                         {
                             if (process.ExitCode == 0)
                             {
-                                Log($"✅ 命令执行成功，退出码: {process.ExitCode}");
+                                Log($"✅ 命令执行成功，退出码：{process.ExitCode}");
                                 return true;
                             }
                             else
                             {
-                                Log($"❌ 命令执行失败，退出码: {process.ExitCode}");
+                                Log($"❌ 命令执行失败，退出码：{process.ExitCode}");
                                 return false;
                             }
                         }
@@ -216,7 +216,7 @@ namespace Com.Scm.Upgrade
             }
             catch (Exception exp)
             {
-                Log($"❌ 命令执行异常: {exp.Message}");
+                Log($"❌ 命令执行异常：{exp.Message}");
                 return false;
             }
         }
@@ -340,7 +340,7 @@ namespace Com.Scm.Upgrade
             Log("[步骤1/7] 准备安装目录...");
             if (!Directory.Exists(_AppConfig.InstallPath))
             {
-                Log($"[步骤1/7] 创建安装目录: {_AppConfig.InstallPath}");
+                Log($"[步骤1/7] 创建安装目录：{_AppConfig.InstallPath}");
                 Directory.CreateDirectory(_AppConfig.InstallPath);
             }
             Log("[步骤1/7] 安装目录准备完成");
@@ -358,10 +358,10 @@ namespace Com.Scm.Upgrade
             {
                 if (!File.Exists(_AppConfig.InstallFile))
                 {
-                    Log($"❌ [步骤2/7] 错误：指定的本地文件不存在: {_AppConfig.InstallFile}");
+                    Log($"❌ [步骤2/7] 错误：指定的本地文件不存在：{_AppConfig.InstallFile}");
                     return null;
                 }
-                Log($"[步骤2/7] 使用本地压缩包: {Path.GetFileName(_AppConfig.InstallFile)}");
+                Log($"[步骤2/7] 使用本地压缩包：{Path.GetFileName(_AppConfig.InstallFile)}");
                 return _AppConfig.InstallFile;
             }
             else if (_AppConfig.InstallType == InstallType.FromUrl)
@@ -373,7 +373,7 @@ namespace Com.Scm.Upgrade
             {
                 if (File.Exists(_AppConfig.InstallFile))
                 {
-                    Log($"[步骤2/7] 使用本地压缩包: {Path.GetFileName(_AppConfig.InstallFile)}");
+                    Log($"[步骤2/7] 使用本地压缩包：{Path.GetFileName(_AppConfig.InstallFile)}");
                     return _AppConfig.InstallFile;
                 }
                 else
@@ -535,11 +535,11 @@ namespace Com.Scm.Upgrade
                         }
                     }
 
-                    Log($"[步骤4/7] ✅ 备份完成: {Path.GetFileName(backupFilePath)}");
+                    Log($"[步骤4/7] ✅ 备份完成：{Path.GetFileName(backupFilePath)}");
                 }
                 catch (Exception ex)
                 {
-                    Log($"❌ [步骤4/7] 备份失败: {ex.Message}");
+                    Log($"❌ [步骤4/7] 备份失败：{ex.Message}");
                 }
             });
         }
@@ -648,7 +648,7 @@ namespace Com.Scm.Upgrade
                 return;
             }
 
-            Log($"[步骤7/7] 🔛 执行命令: {_AppConfig.Launch.Command} {(_AppConfig.Launch.Args ?? "")}");
+            Log($"[步骤7/7] 🔛 执行命令：{_AppConfig.Launch.Command} {(_AppConfig.Launch.Args ?? "")}");
             await Task.Run(() => ExecuteCommand(_AppConfig.InstallPath, _AppConfig.Launch.Command, _AppConfig.Launch.Args));
 
             Log("[步骤7/7] ✅ 命令执行完成");

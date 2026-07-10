@@ -16,8 +16,8 @@
     "Path": "D:\\temp\\backup"
   },
   "launch": {
-    "File": "dotnet",
-    "Args": "Scm.Net.dll"
+    "Command": "Notepad",
+    "Args": ""
   },
   "appInfo": "测试应用描述",
   "verInfo": "1、新增功能\n2、更新功能\n3、优化功能\n4、移除功能"

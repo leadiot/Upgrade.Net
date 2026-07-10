@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace Com.Scm.Upgrade.Config
 {
@@ -141,12 +141,15 @@ namespace Com.Scm.Upgrade.Config
     public class LaunchConfig
     {
         /// <summary>
-        /// 执行文件
+        /// 启动命令，支持格式：
+        /// - 简单命令: "MyApp.exe"
+        /// - 带参数: "dotnet MyApp.dll"
+        /// - 完整路径: "C:\\Program Files\\MyApp.exe"
         /// </summary>
-        public string File { get; set; }
+        public string Command { get; set; }
 
         /// <summary>
-        /// 执行参数
+        /// 额外参数，追加到命令后面
         /// </summary>
         public string Args { get; set; }
     }
