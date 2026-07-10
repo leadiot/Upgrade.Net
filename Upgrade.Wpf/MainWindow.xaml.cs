@@ -43,14 +43,14 @@ namespace Com.Scm.Upgrade
 
             if (appConfig.AppInfo != null)
             {
-                _Dvo.Content = appConfig.AppInfo.content;
+                _Dvo.AppInfo = appConfig.AppInfo.content;
             }
             if (appConfig.VerInfo == null)
             {
-                _Dvo.Info = "版本信息为空！";
+                _Dvo.VerInfo = "版本信息为空！";
                 return;
             }
-            _Dvo.Info = appConfig.VerInfo.remark;
+            _Dvo.VerInfo = appConfig.VerInfo.remark;
 
             if (string.IsNullOrEmpty(_AppConfig.InstallPath))
             {
@@ -105,7 +105,7 @@ namespace Com.Scm.Upgrade
             }
 
             _Token = new CancellationTokenSource();
-            _Dvo.Percent = 0;
+            _Dvo.Ratio = 0;
 
             _Dvo.StartEnabled = false;
             _Dvo.PauseEnabled = true;
@@ -267,7 +267,7 @@ namespace Com.Scm.Upgrade
                         if (_TotalBytes > 0)
                         {
                             var progress = (_DownloadedBytes * 100.0) / _TotalBytes;
-                            _Dvo.Percent = Math.Min(progress, 100);
+                            _Dvo.Ratio = Math.Min(progress, 100);
                             Log($"[步骤4/8] 下载中：{FormatFileSize(_DownloadedBytes)} / {FormatFileSize(_TotalBytes)} ({progress:0.00}%)");
                         }
                         else
@@ -278,7 +278,7 @@ namespace Com.Scm.Upgrade
                 }
             }
 
-            _Dvo.Percent = 100;
+            _Dvo.Ratio = 100;
             Log("[步骤4/8] 文件下载完成");
             return tempFilePath;
         }
@@ -322,7 +322,7 @@ namespace Com.Scm.Upgrade
 
         private async Task BackupFiles()
         {
-            _Dvo.Percent = 0;
+            _Dvo.Ratio = 0;
             Log("[步骤5/8] 备份现有文件...");
 
             if (_AppConfig.Backup == null || string.IsNullOrEmpty(_AppConfig.Backup.Path))
@@ -378,7 +378,7 @@ namespace Com.Scm.Upgrade
                             }
 
                             var progress = ((processed + skipped) * 100.0) / totalFiles;
-                            _Dvo.Percent = Math.Min(progress, 100);
+                            _Dvo.Ratio = Math.Min(progress, 100);
                             Log($"[步骤5/8] 备份中：{processed}/{totalFiles} ({progress:0.00}%)");
                         }
                     }
@@ -394,7 +394,7 @@ namespace Com.Scm.Upgrade
 
         private async Task ExtractFiles(string zipPath)
         {
-            _Dvo.Percent = 0;
+            _Dvo.Ratio = 0;
             Log("[步骤6/8] 解压文件...");
 
             await Task.Run(() =>
@@ -444,7 +444,7 @@ namespace Com.Scm.Upgrade
 
                         _ProcessedEntries++;
                         var progress = (_ProcessedEntries * 100.0) / _TotalEntries;
-                        _Dvo.Percent = Math.Min(progress, 100);
+                        _Dvo.Ratio = Math.Min(progress, 100);
                         Log($"[步骤6/8] 解压中：{_ProcessedEntries}/{_TotalEntries} ({progress:0.00}%)");
                     }
                 }

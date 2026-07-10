@@ -4,11 +4,17 @@ namespace Com.Scm.Upgrade.Dvo
 {
     public class MainWindowDvo : INotifyPropertyChanged
     {
-        private string content;
-        public string Content { get { return content; } set { content = value; OnPropertyChanged(nameof(Content)); } }
+        private string title;
+        public string Title { get { return title; } set { title = value; OnPropertyChanged(nameof(Title)); } }
 
-        private string info;
-        public string Info { get { return info; } set { info = value; OnPropertyChanged(nameof(Info)); } }
+        private string version;
+        public string Version { get { return version; } set { version = value; OnPropertyChanged(nameof(Version)); } }
+
+        private string appInfo;
+        public string AppInfo { get { return appInfo; } set { appInfo = value; OnPropertyChanged(nameof(AppInfo)); } }
+
+        private string verInfo;
+        public string VerInfo { get { return verInfo; } set { verInfo = value; OnPropertyChanged(nameof(VerInfo)); } }
 
         private string status;
         public string Status { get { return status; } set { status = value; OnPropertyChanged(nameof(Status)); } }
@@ -16,9 +22,14 @@ namespace Com.Scm.Upgrade.Dvo
         private double ratio;
         public double Ratio { get { return ratio; } set { ratio = value; OnPropertyChanged(nameof(Ratio)); } }
 
+        private bool startEnabled = true;
+        public bool StartEnabled { get { return startEnabled; } set { startEnabled = value; OnPropertyChanged(nameof(StartEnabled)); } }
 
-        private bool enabled;
-        public bool Enabled { get { return enabled; } set { enabled = value; OnPropertyChanged(nameof(Enabled)); } }
+        private bool pauseEnabled;
+        public bool PauseEnabled { get { return pauseEnabled; } set { pauseEnabled = value; OnPropertyChanged(nameof(PauseEnabled)); } }
+
+        private bool cancelEnabled;
+        public bool CancelEnabled { get { return cancelEnabled; } set { cancelEnabled = value; OnPropertyChanged(nameof(CancelEnabled)); } }
 
         public event PropertyChangedEventHandler PropertyChanged;
 

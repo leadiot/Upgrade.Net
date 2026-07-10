@@ -9,6 +9,13 @@ namespace Com.Scm.Upgrade.Config
         public const string CONFIG_FILE = "upgrade.json";
 
         /// <summary>
+        /// 应用图标，用于升级程序显示
+        /// 默认：无
+        /// 选项：可选
+        /// </summary>
+        public string Icon { get; set; }
+
+        /// <summary>
         /// 升级程序显示标题
         /// 默认：Upgrade.Wpf更新
         /// 选项：可选
@@ -91,6 +98,9 @@ namespace Com.Scm.Upgrade.Config
         /// 选项：可选
         /// </summary>
         public ScmVerInfo VerInfo { get; set; } = new ScmVerInfo();
+
+        public string OldVersion { get; set; }
+        public string NewVersion { get; set; }
 
         public void LoadDefault()
         {

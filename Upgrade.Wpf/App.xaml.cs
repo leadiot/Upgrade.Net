@@ -24,7 +24,7 @@ namespace Com.Scm.Upgrade
                     settings.LoadDefault();
                 }
 
-                //mainWindow.Init(settings);
+                mainWindow.Init(settings);
             }
             catch
             {
