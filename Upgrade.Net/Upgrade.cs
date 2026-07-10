@@ -64,14 +64,21 @@ namespace Com.Scm.Upgrade
                 if (!File.Exists(zipFile))
                 {
                     Log($"   [错误] 指定的本地安装文件不存在: {zipFile}，结束升级任务");
+                    ExitApplication();
                     return;
                 }
                 Log($"   [信息] 使用本地文件: {zipFile}");
             }
             else if (config.InstallType == InstallType.FromUrl)
             {
+                if (string.IsNullOrWhiteSpace(config.DownloadUrl))
+                {
+                    Log($"   [错误] 远程下载地址为空，结束升级任务");
+                    ExitApplication();
+                    return;
+                }
                 Log("   [信息] 从远程下载安装文件...");
-                zipFile = DownloadFile(config.VerInfo.url);
+                zipFile = DownloadFile(config.DownloadUrl);
                 isDownloaded = true;
                 Log($"   [成功] 文件下载完成");
             }
@@ -84,8 +91,14 @@ namespace Com.Scm.Upgrade
                 }
                 else
                 {
+                    if (string.IsNullOrWhiteSpace(config.DownloadUrl))
+                    {
+                        Log($"   [错误] 远程下载地址为空，结束升级任务");
+                        ExitApplication();
+                        return;
+                    }
                     Log($"   [信息] 本地文件不存在，转为远程下载...");
-                    zipFile = DownloadFile(config.VerInfo.url);
+                    zipFile = DownloadFile(config.DownloadUrl);
                     isDownloaded = true;
                     Log($"   [成功] 文件下载完成");
                 }
@@ -414,12 +427,12 @@ namespace Com.Scm.Upgrade
             {
                 for (int i = seconds; i > 0; i--)
                 {
-                    Log($"   [信息] 升级程序将在 {i} 秒后执行...");
+                    Log($"   [信息] 升级任务将在 {i} 秒后执行...");
                     Thread.Sleep(1000);
                 }
             }
             Log("");
-            Log("   [信息] 升级程序已启动");
+            Log("   [信息] 开始执行升级任务");
 
             return dstFile;
         }

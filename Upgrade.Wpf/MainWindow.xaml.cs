@@ -205,8 +205,13 @@ namespace Com.Scm.Upgrade
             }
             else if (_AppConfig.InstallType == InstallType.FromUrl)
             {
+                if (string.IsNullOrWhiteSpace(_AppConfig.DownloadUrl))
+                {
+                    _Dvo.Status = $"[步骤4/8] 错误：远程下载地址为空";
+                    return null;
+                }
                 _Dvo.Status = "[步骤4/8] 从远程服务器下载...";
-                return await DownloadFileAsync(_AppConfig.VerInfo.url);
+                return await DownloadFileAsync(_AppConfig.DownloadUrl);
             }
             else
             {
@@ -217,8 +222,13 @@ namespace Com.Scm.Upgrade
                 }
                 else
                 {
+                    if (string.IsNullOrWhiteSpace(_AppConfig.DownloadUrl))
+                    {
+                        _Dvo.Status = $"[步骤4/8] 错误：远程下载地址为空";
+                        return null;
+                    }
                     _Dvo.Status = "[步骤4/8] 本地文件不存在，转为远程下载...";
-                    return await DownloadFileAsync(_AppConfig.VerInfo.url);
+                    return await DownloadFileAsync(_AppConfig.DownloadUrl);
                 }
             }
         }
@@ -289,6 +299,7 @@ namespace Com.Scm.Upgrade
             _Dvo.Status = "[步骤4/8] 复制离线文件...";
             var name = Path.GetFileName(file);
             var dstFile = Path.Combine(_AppConfig.InstallPath, name);
+            _Dvo.Status = "[步骤4/8] 离线文件复制完成";
 
             await Task.Run(() =>
             {
@@ -299,13 +310,13 @@ namespace Com.Scm.Upgrade
                 {
                     for (int i = seconds; i > 0; i--)
                     {
-                        _Dvo.Status = $"[步骤4/8] 离线文件已复制，等待 {i} 秒...";
+                        _Dvo.Status = $"[步骤4/8] 升级程序将在 {i} 秒后执行...";
                         Thread.Sleep(1000);
                     }
                 }
             });
 
-            _Dvo.Status = "[步骤4/8] 离线文件复制完成";
+            _Dvo.Status = "[步骤4/8] 开始执行升级任务";
             return dstFile;
         }
 
