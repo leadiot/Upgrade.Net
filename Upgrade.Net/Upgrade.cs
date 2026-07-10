@@ -34,8 +34,9 @@ namespace Com.Scm.Upgrade
                 return;
             }
             Log("   [成功] 配置信息验证通过");
-            Log($"   ├─ 目标版本： {config.VerInfo.ver_info}");
-            Log($"   ├─ 下载地址： {config.VerInfo.url}");
+            Log($"   ├─ 当前版本： {config.OldVersion}");
+            Log($"   ├─ 目标版本： {config.NewVersion}");
+            Log($"   ├─ 下载地址： {config.DownloadUrl}");
             Log($"   ├─ 安装路径： {config.InstallPath}");
             if (config.Backup != null)
             {
@@ -153,7 +154,7 @@ namespace Com.Scm.Upgrade
             Log("═══════════════════════════════════════════════");
 
             var summaryLines = new List<string>();
-            summaryLines.Add($"目标版本: {config.VerInfo.ver_info}");
+            summaryLines.Add($"目标版本: {config.NewVersion}");
             summaryLines.Add($"安装路径: {config.InstallPath}");
             if (backupResult.Success)
                 summaryLines.Add($"备份文件: {backupResult.BackupPath}");
@@ -176,7 +177,7 @@ namespace Com.Scm.Upgrade
 
         private bool ValidateConfig(UpgradeConfig config)
         {
-            if (string.IsNullOrEmpty(config.VerInfo?.url))
+            if (string.IsNullOrEmpty(config.DownloadUrl))
             {
                 Log("   [错误] 下载地址为空，结束升级任务");
                 return false;

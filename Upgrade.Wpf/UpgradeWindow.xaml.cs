@@ -38,6 +38,15 @@ namespace Com.Scm.Upgrade
             this.Title = title;
             this.TbTitle.Text = title;
 
+            if (!string.IsNullOrWhiteSpace(_AppConfig.Icon) && File.Exists(_AppConfig.Icon))
+            {
+                _Dvo.Icon = new System.Windows.Media.Imaging.BitmapImage(new Uri(_AppConfig.Icon, UriKind.RelativeOrAbsolute));
+            }
+            else
+            {
+                _Dvo.Icon = new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/Upgrade.Wpf;component/Resources/logo.ico", UriKind.Absolute));
+            }
+
             _Dvo.Title = string.IsNullOrEmpty(_AppConfig.Title) ? title : appConfig.Title;
             _Dvo.Subtitle = appConfig.OldVersion + " → " + appConfig.NewVersion;
 
@@ -59,7 +68,12 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        // 1. 标题栏拖拽逻辑
+        #region 事件处理
+        /// <summary>
+        /// 拖拽逻辑
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ClickCount == 1 && this.WindowState != WindowState.Maximized)
@@ -68,37 +82,52 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        // 2. 右上角关闭按钮
+        /// <summary>
+        /// 关闭窗口
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void BtCloseWindow_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
         }
 
-        // 5. 稍后提醒
+        /// <summary>
+        /// 稍后提醒
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void BtLater_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
         }
 
-        // 3. 立即更新逻辑
+        /// <summary>
+        /// 开始更新
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void BtStart_Click(object sender, RoutedEventArgs e)
         {
-            BtStart.IsEnabled = false;
-            BtStart.Content = "更新中...";
-            BtLater.Visibility = Visibility.Collapsed;
-            //ProgressArea.Visibility = Visibility.Visible;
-
             Start();
         }
 
+        /// <summary>
+        /// 扫描文件
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void BtLaunch_Click(object sender, RoutedEventArgs e)
         {
             var executePath = Path.Combine(_AppConfig.InstallPath, _AppConfig.Launch.File);
-            if (File.Exists(executePath))
+            if (!File.Exists(executePath))
             {
-                Execute(_AppConfig.InstallPath, executePath, _AppConfig.Launch.Args);
+                MessageBox.Show(this, $"执行文件 {_AppConfig.Launch.File} 不存在！");
+                return;
             }
+            Execute(_AppConfig.InstallPath, executePath, _AppConfig.Launch.Args);
         }
+        #endregion
 
         #region 公共方法
         private void Log(string message)
@@ -120,15 +149,22 @@ namespace Com.Scm.Upgrade
 
         private void Execute(string path, string file, string args)
         {
-            var processStartInfo = new ProcessStartInfo
+            try
             {
-                FileName = file,
-                Arguments = args ?? string.Empty,
-                WorkingDirectory = path,
-                UseShellExecute = true,
-                CreateNoWindow = true
-            };
-            Process.Start(processStartInfo);
+                var processStartInfo = new ProcessStartInfo
+                {
+                    FileName = file,
+                    Arguments = args ?? string.Empty,
+                    WorkingDirectory = path,
+                    UseShellExecute = true,
+                    CreateNoWindow = true
+                };
+                Process.Start(processStartInfo);
+            }
+            catch (Exception exp)
+            {
+                MessageBox.Show(this, exp.Message);
+            }
         }
         #endregion
 
@@ -141,6 +177,10 @@ namespace Com.Scm.Upgrade
             }
 
             _Running = true;
+
+            BtStart.IsEnabled = false;
+            BtStart.Content = "更新中...";
+            BtLater.Visibility = Visibility.Collapsed;
 
             _Token = new CancellationTokenSource();
             _Dvo.Percent = 0;
@@ -163,9 +203,7 @@ namespace Com.Scm.Upgrade
 
                 await ExtractFiles(zipFile);
 
-                await DeleteOfflineFile(offlineFile);
-
-                await CleanupTempFile(zipFile, isDownloaded);
+                await CleanupFiles(offlineFile, zipFile, isDownloaded);
 
                 await LaunchApplication();
 
@@ -178,7 +216,7 @@ namespace Com.Scm.Upgrade
                     return;
                 }
 
-                Thread.Sleep(1000);
+                Thread.Sleep(3000);
                 this.Close();
             }
             catch (OperationCanceledException)
@@ -472,9 +510,15 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private async Task CleanupTempFile(string zipFile, bool isDownloaded)
+        private async Task CleanupFiles(string offlineFile, string zipFile, bool isDownloaded)
         {
             Log("[步骤7/8] 清理临时文件...");
+
+            if (File.Exists(offlineFile))
+            {
+                await Task.Run(() => File.Delete(offlineFile));
+                Log("[步骤7/8] 离线文件已清理");
+            }
 
             if (isDownloaded && File.Exists(zipFile))
             {
@@ -499,19 +543,14 @@ namespace Com.Scm.Upgrade
 
             var executePath = Path.Combine(_AppConfig.InstallPath, _AppConfig.Launch.File);
 
-            if (File.Exists(executePath))
-            {
-                await Task.Run(() =>
-                {
-                    Execute(_AppConfig.InstallPath, executePath, _AppConfig.Launch.Args);
-                });
-
-                Log($"[步骤8/8] 启动程序: {_AppConfig.Launch.File}");
-            }
-            else
+            if (!File.Exists(executePath))
             {
                 Log($"[步骤8/8] 警告：执行文件不存在: {executePath}");
+                return;
             }
+
+            Log($"[步骤8/8] 启动程序: {_AppConfig.Launch.File}");
+            await Task.Run(() => Execute(_AppConfig.InstallPath, executePath, _AppConfig.Launch.Args));
         }
         #endregion
     }

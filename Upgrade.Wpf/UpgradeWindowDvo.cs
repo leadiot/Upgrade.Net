@@ -1,9 +1,20 @@
 using Com.Scm.Upgrade.Dvo;
+using System.Windows.Media;
 
 namespace Com.Scm.Upgrade
 {
     public class UpgradeWindowDvo : ScmDvo
     {
+        private ImageSource icon;
+        public ImageSource Icon
+        {
+            get { return icon; }
+            set
+            {
+                icon = value; OnPropertyChanged(nameof(Icon));
+            }
+        }
+
         /// <summary>
         /// 主标题
         /// </summary>
