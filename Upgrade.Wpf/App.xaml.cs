@@ -12,7 +12,7 @@ namespace Com.Scm.Upgrade
         {
             base.OnStartup(e);
 
-            var mainWindow = new MainWindow();
+            var mainWindow = new UpdateWindow();
             mainWindow.Show();
 
             try
@@ -24,7 +24,7 @@ namespace Com.Scm.Upgrade
                     settings.LoadDefault();
                 }
 
-                mainWindow.Init(settings);
+                //mainWindow.Init(settings);
             }
             catch
             {
