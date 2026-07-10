@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Text.Json;
 
 namespace Com.Scm.Upgrade.Config
@@ -141,8 +141,17 @@ namespace Com.Scm.Upgrade.Config
 
     public class LaunchConfig
     {
-        public string File { get; set; }
+        /// <summary>
+        /// 启动命令，支持格式：
+        /// - 简单命令: "MyApp.exe"
+        /// - 带参数: "dotnet MyApp.dll"
+        /// - 完整路径: "C:\\Program Files\\MyApp.exe"
+        /// </summary>
+        public string Command { get; set; }
 
+        /// <summary>
+        /// 额外参数，追加到命令后面
+        /// </summary>
         public string Args { get; set; }
     }
 

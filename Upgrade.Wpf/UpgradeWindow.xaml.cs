@@ -20,7 +20,6 @@ namespace Com.Scm.Upgrade
         private CancellationTokenSource _Token;
         private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
 
-        private bool _Paused;
         private bool _Running;
 
         public UpgradeWindow()
@@ -51,14 +50,14 @@ namespace Com.Scm.Upgrade
             _Dvo.Subtitle = appConfig.OldVersion + " → " + appConfig.NewVersion;
 
             _Dvo.AppInfo = appConfig.AppInfo ?? "应用简介为空";
-            _Dvo.VerInfo = appConfig.VerInfo ?? "版本信息为空！";
+            _Dvo.VerInfo = appConfig.VerInfo ?? "暂无版本更新说明";
 
             if (string.IsNullOrEmpty(_AppConfig.InstallPath))
             {
                 _AppConfig.InstallPath = AppDomain.CurrentDomain.BaseDirectory;
             }
 
-            Log("准备更新...");
+            Log("初始化完成，点击开始升级");
 
             this.DataContext = _Dvo;
 
@@ -119,13 +118,16 @@ namespace Com.Scm.Upgrade
         /// <param name="e"></param>
         private void BtLaunch_Click(object sender, RoutedEventArgs e)
         {
-            var executePath = Path.Combine(_AppConfig.InstallPath, _AppConfig.Launch.File);
-            if (!File.Exists(executePath))
+            if (_AppConfig.Launch == null || string.IsNullOrWhiteSpace(_AppConfig.Launch.Command))
             {
-                MessageBox.Show(this, $"执行文件 {_AppConfig.Launch.File} 不存在！");
+                MessageBox.Show(this, "未配置启动命令！");
                 return;
             }
-            Execute(_AppConfig.InstallPath, executePath, _AppConfig.Launch.Args);
+            var result = ExecuteCommand(_AppConfig.InstallPath, _AppConfig.Launch.Command, _AppConfig.Launch.Args);
+            if (!result)
+            {
+                MessageBox.Show(this, "启动程序失败！");
+            }
         }
         #endregion
 
@@ -147,24 +149,107 @@ namespace Com.Scm.Upgrade
             return size + units[i];
         }
 
-        private void Execute(string path, string file, string args)
+        private bool ExecuteCommand(string path, string command, string args)
         {
             try
             {
+                var parts = ParseCommand(command);
+                var exePath = parts.Item1;
+                var exeArgs = parts.Item2;
+
                 var processStartInfo = new ProcessStartInfo
                 {
-                    FileName = file,
-                    Arguments = args ?? string.Empty,
+                    FileName = exePath,
+                    Arguments = $"{exeArgs} {args ?? string.Empty}".Trim(),
                     WorkingDirectory = path,
-                    UseShellExecute = true,
-                    CreateNoWindow = true
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
                 };
-                Process.Start(processStartInfo);
+
+                using (var process = Process.Start(processStartInfo))
+                {
+                    if (process != null)
+                    {
+                        Log($"🔹 命令进程已启动，PID: {process.Id}");
+
+                        var outputReader = process.StandardOutput.ReadToEndAsync();
+                        var errorReader = process.StandardError.ReadToEndAsync();
+                        var timeoutMs = 5000;
+                        var exited = process.WaitForExit(timeoutMs);
+
+                        var output = outputReader.Result;
+                        var error = errorReader.Result;
+
+                        if (!string.IsNullOrEmpty(output))
+                        {
+                            Log($"📋 命令输出: {output.Trim().Substring(0, Math.Min(200, output.Length))}");
+                        }
+                        if (!string.IsNullOrEmpty(error))
+                        {
+                            Log($"⚠️ 命令错误: {error.Trim().Substring(0, Math.Min(200, error.Length))}");
+                        }
+
+                        if (exited)
+                        {
+                            if (process.ExitCode == 0)
+                            {
+                                Log($"✅ 命令执行成功，退出码: {process.ExitCode}");
+                                return true;
+                            }
+                            else
+                            {
+                                Log($"❌ 命令执行失败，退出码: {process.ExitCode}");
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            Log($"🔄 命令进程在 {timeoutMs / 1000} 秒内未退出，视为后台运行");
+                            return true;
+                        }
+                    }
+                    Log($"❌ 命令进程启动失败");
+                    return false;
+                }
             }
             catch (Exception exp)
             {
-                MessageBox.Show(this, exp.Message);
+                Log($"❌ 命令执行异常: {exp.Message}");
+                return false;
             }
+        }
+
+        private Tuple<string, string> ParseCommand(string command)
+        {
+            if (string.IsNullOrWhiteSpace(command))
+            {
+                return Tuple.Create(string.Empty, string.Empty);
+            }
+
+            command = command.Trim();
+
+            if (command.StartsWith("\""))
+            {
+                var endQuote = command.IndexOf("\"", 1);
+                if (endQuote > 0)
+                {
+                    var exe = command.Substring(1, endQuote - 1);
+                    var args = command.Substring(endQuote + 1).Trim();
+                    return Tuple.Create(exe, args);
+                }
+            }
+
+            var spaceIndex = command.IndexOf(' ');
+            if (spaceIndex > 0)
+            {
+                var exe = command.Substring(0, spaceIndex);
+                var args = command.Substring(spaceIndex + 1);
+                return Tuple.Create(exe, args);
+            }
+
+            return Tuple.Create(command, string.Empty);
         }
         #endregion
 
@@ -187,8 +272,12 @@ namespace Com.Scm.Upgrade
 
             try
             {
+                Log("开始升级流程，共7个步骤...");
+
+                // 1. 准备安装目录
                 PrepareInstallDirectory();
 
+                // 2. 获取安装文件
                 var zipFile = await GetInstallFile();
                 if (zipFile == null)
                 {
@@ -197,87 +286,109 @@ namespace Com.Scm.Upgrade
 
                 bool isDownloaded = !string.Equals(zipFile, _AppConfig.InstallFile);
 
+                // 3. 复制离线升级文件
                 string offlineFile = await CopyOfflineFile();
 
+                // 4. 备份现有文件
                 await BackupFiles();
 
+                // 5. 解压文件
                 await ExtractFiles(zipFile);
 
+                // 6. 清理临时文件
                 await CleanupFiles(offlineFile, zipFile, isDownloaded);
 
+                // 7. 启动应用程序
                 await LaunchApplication();
-
-                Log("升级完成！");
 
                 if (!_AppConfig.AutoClose)
                 {
+                    Log("🎉 升级完成！");
                     BtStart.Visibility = Visibility.Collapsed;
                     BtLaunch.Visibility = Visibility.Visible;
                     return;
                 }
 
-                Thread.Sleep(3000);
+                Log("🎉 升级完成，3秒后升级程序自动关闭...");
+                await Task.Delay(3000);
                 this.Close();
             }
             catch (OperationCanceledException)
             {
-                Log("已取消");
+                Log("🔹 用户已取消升级");
                 return;
             }
             catch (Exception ex)
             {
-                Log($"更新失败：{ex.Message}");
+                Log($"❌ 更新失败：{ex.Message}");
                 BtLater.Visibility = Visibility.Visible;
                 BtStart.Visibility = Visibility.Visible;
                 BtLaunch.Visibility = Visibility.Collapsed;
                 return;
             }
+            finally
+            {
+                _Running = false;
+            }
         }
 
+        /// <summary>
+        /// 准备安装目录，如果不存在则创建
+        /// </summary>
         private void PrepareInstallDirectory()
         {
-            Log("[步骤3/8] 准备安装目录...");
+            Log("[步骤1/7] 准备安装目录...");
             if (!Directory.Exists(_AppConfig.InstallPath))
             {
+                Log($"[步骤1/7] 创建安装目录: {_AppConfig.InstallPath}");
                 Directory.CreateDirectory(_AppConfig.InstallPath);
             }
-            Log("[步骤3/8] 安装目录准备完成");
+            Log("[步骤1/7] 安装目录准备完成");
         }
 
+        /// <summary>
+        /// 获取安装文件，如果是远程下载则返回临时文件路径，如果是本地文件则返回原路径
+        /// </summary>
+        /// <returns></returns>
         private async Task<string> GetInstallFile()
         {
-            Log("[步骤4/8] 获取安装文件...");
+            Log("[步骤2/7] 获取安装文件...");
 
             if (_AppConfig.InstallType == InstallType.FromZip)
             {
                 if (!File.Exists(_AppConfig.InstallFile))
                 {
-                    Log($"[步骤4/8] 错误：指定的本地文件不存在: {_AppConfig.InstallFile}");
+                    Log($"❌ [步骤2/7] 错误：指定的本地文件不存在: {_AppConfig.InstallFile}");
                     return null;
                 }
-                Log($"[步骤4/8] 使用本地文件: {_AppConfig.InstallFile}");
+                Log($"[步骤2/7] 使用本地压缩包: {Path.GetFileName(_AppConfig.InstallFile)}");
                 return _AppConfig.InstallFile;
             }
             else if (_AppConfig.InstallType == InstallType.FromUrl)
             {
-                Log("[步骤4/8] 从远程服务器下载...");
+                Log("[步骤2/7] 从远程服务器下载更新包...");
                 return await DownloadFileAsync(_AppConfig.DownloadUrl);
             }
             else
             {
                 if (File.Exists(_AppConfig.InstallFile))
                 {
-                    Log($"[步骤4/8] 使用本地文件: {_AppConfig.InstallFile}");
+                    Log($"[步骤2/7] 使用本地压缩包: {Path.GetFileName(_AppConfig.InstallFile)}");
                     return _AppConfig.InstallFile;
                 }
                 else
                 {
-                    Log("[步骤4/8] 本地文件不存在，转为远程下载...");
+                    Log("[步骤2/7] 本地文件不存在，转为远程下载...");
                     return await DownloadFileAsync(_AppConfig.DownloadUrl);
                 }
             }
         }
 
+        /// <summary>
+        /// 下载文件并返回临时文件路径
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
         private async Task<string> DownloadFileAsync(string url)
         {
             var tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".zip");
@@ -297,11 +408,6 @@ namespace Com.Scm.Upgrade
 
                     while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, _Token.Token)) > 0)
                     {
-                        while (_Paused)
-                        {
-                            await Task.Delay(100, _Token.Token);
-                        }
-
                         await fileStream.WriteAsync(buffer, 0, bytesRead, _Token.Token);
                         downloadedBytes += bytesRead;
 
@@ -309,21 +415,25 @@ namespace Com.Scm.Upgrade
                         {
                             var progress = (downloadedBytes * 100.0) / totalBytes;
                             _Dvo.Percent = Math.Min(progress, 100);
-                            Log($"[步骤4/8] 下载中：{FormatFileSize(downloadedBytes)} / {FormatFileSize(totalBytes)} ({progress:0.00}%)");
+                            Log($"[步骤2/7] 📥 下载中：{FormatFileSize(downloadedBytes)} / {FormatFileSize(totalBytes)} ({progress:0.0}%)");
                         }
                         else
                         {
-                            Log($"[步骤4/8] 下载中：{FormatFileSize(downloadedBytes)}");
+                            Log($"[步骤2/7] 📥 下载中：{FormatFileSize(downloadedBytes)}");
                         }
                     }
                 }
             }
 
             _Dvo.Percent = 100;
-            Log("[步骤4/8] 文件下载完成");
+            Log("[步骤2/7] ✅ 文件下载完成");
             return tempFilePath;
         }
 
+        /// <summary>
+        /// 复制离线升级文件到安装目录，如果配置了等待时间则等待指定秒数后继续
+        /// </summary>
+        /// <returns></returns>
         private async Task<string> CopyOfflineFile()
         {
             if (_AppConfig.Offline == null)
@@ -337,44 +447,45 @@ namespace Com.Scm.Upgrade
                 return null;
             }
 
-            Log("[步骤4/8] 复制离线文件...");
+            Log("[步骤3/7] 📦 复制离线升级文件...");
             var name = Path.GetFileName(file);
             var dstFile = Path.Combine(_AppConfig.InstallPath, name);
-            Log("[步骤4/8] 离线文件复制完成");
 
             await Task.Run(() =>
             {
                 File.Copy(file, dstFile, true);
+                Log("[步骤3/7] ✅ 离线文件复制完成");
 
                 var seconds = _AppConfig.Offline.Time;
                 if (seconds > 0)
                 {
+                    Log($"[步骤3/7] ⏳ 等待 {seconds} 秒后执行升级...");
                     for (int i = seconds; i > 0; i--)
                     {
-                        Log($"[步骤4/8] 升级程序将在 {i} 秒后执行...");
+                        Log($"[步骤3/7] ⏳ 倒计时：{i} 秒");
                         Thread.Sleep(1000);
                     }
                 }
             });
 
-            Log("[步骤4/8] 开始执行升级任务");
+            Log("[步骤3/7] 🚀 开始执行升级任务");
             return dstFile;
         }
 
         private async Task BackupFiles()
         {
             _Dvo.Percent = 0;
-            Log("[步骤5/8] 备份现有文件...");
+            Log("[步骤4/7] 📋 备份现有文件...");
 
             if (_AppConfig.Backup == null || string.IsNullOrEmpty(_AppConfig.Backup.Path))
             {
-                Log("[步骤5/8] 未配置备份，跳过");
+                Log("[步骤4/7] ⏭️ 未配置备份路径，跳过备份");
                 return;
             }
 
             if (!Directory.Exists(_AppConfig.InstallPath))
             {
-                Log("[步骤5/8] 安装目录不存在，跳过备份");
+                Log("[步骤4/7] ⏭️ 安装目录不存在，跳过备份");
                 return;
             }
 
@@ -392,11 +503,11 @@ namespace Com.Scm.Upgrade
 
                     if (totalFiles == 0)
                     {
-                        Log("[步骤5/8] 安装目录为空，跳过备份");
+                        Log("[步骤4/7] ⏭️ 安装目录为空，跳过备份");
                         return;
                     }
 
-                    Log($"[步骤5/8] 准备备份 {totalFiles} 个文件...");
+                    Log($"[步骤4/7] 📦 准备备份 {totalFiles} 个文件...");
 
                     using (var zipStream = File.Create(backupFilePath))
                     using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
@@ -420,15 +531,15 @@ namespace Com.Scm.Upgrade
 
                             var progress = ((processed + skipped) * 100.0) / totalFiles;
                             _Dvo.Percent = Math.Min(progress, 100);
-                            Log($"[步骤5/8] 备份中：{processed}/{totalFiles} ({progress:0.00}%)");
+                            Log($"[步骤4/7] 🔄 备份中：{processed}/{totalFiles} ({progress:0.0}%){(skipped > 0 ? $"，跳过 {skipped} 个" : "")}");
                         }
                     }
 
-                    Log($"[步骤5/8] 备份完成: {backupFilePath}");
+                    Log($"[步骤4/7] ✅ 备份完成: {Path.GetFileName(backupFilePath)}");
                 }
                 catch (Exception ex)
                 {
-                    Log($"[步骤5/8] 备份失败: {ex.Message}");
+                    Log($"❌ [步骤4/7] 备份失败: {ex.Message}");
                 }
             });
         }
@@ -436,7 +547,7 @@ namespace Com.Scm.Upgrade
         private async Task ExtractFiles(string zipPath)
         {
             _Dvo.Percent = 0;
-            Log("[步骤6/8] 解压文件...");
+            Log("[步骤5/7] 📂 解压文件...");
 
             await Task.Run(() =>
             {
@@ -445,14 +556,15 @@ namespace Com.Scm.Upgrade
                     var entries = archive.Entries.ToList();
                     var totalEntries = entries.Count;
                     var processedEntries = 0;
+                    var ignoredCount = 0;
 
                     if (totalEntries == 0)
                     {
-                        Log("[步骤6/8] 压缩包为空");
+                        Log("[步骤5/7] ⚠️ 压缩包为空");
                         return;
                     }
 
-                    Log($"[步骤6/8] 准备解压 {totalEntries} 个文件...");
+                    Log($"[步骤5/7] 📦 准备解压 {totalEntries} 个文件...");
 
                     foreach (var entry in entries)
                     {
@@ -474,6 +586,7 @@ namespace Com.Scm.Upgrade
                             if (File.Exists(destPath))
                             {
                                 shouldIgnore = true;
+                                ignoredCount++;
                             }
                         }
 
@@ -486,71 +599,59 @@ namespace Com.Scm.Upgrade
                         processedEntries++;
                         var progress = (processedEntries * 100.0) / totalEntries;
                         _Dvo.Percent = Math.Min(progress, 100);
-                        Log($"[步骤6/8] 解压中：{processedEntries}/{totalEntries} ({progress:0.00}%)");
+                        Log($"[步骤5/7] 🔄 解压中：{processedEntries}/{totalEntries} ({progress:0.0}%){(ignoredCount > 0 ? $"，忽略 {ignoredCount} 个" : "")}");
                     }
                 }
             });
 
-            Log("[步骤6/8] 文件解压完成");
-        }
-
-        private async Task DeleteOfflineFile(string file)
-        {
-            if (!string.IsNullOrEmpty(file) && File.Exists(file))
-            {
-                await Task.Run(() =>
-                {
-                    try
-                    {
-                        File.Delete(file);
-                        Log($"[步骤6/8] 删除离线文件: {file}");
-                    }
-                    catch { }
-                });
-            }
+            Log("[步骤5/7] ✅ 文件解压完成");
         }
 
         private async Task CleanupFiles(string offlineFile, string zipFile, bool isDownloaded)
         {
-            Log("[步骤7/8] 清理临时文件...");
+            Log("[步骤6/7] 🧹 清理临时文件...");
 
             if (File.Exists(offlineFile))
             {
                 await Task.Run(() => File.Delete(offlineFile));
-                Log("[步骤7/8] 离线文件已清理");
+                Log("[步骤6/7] ✅ 离线文件已清理");
             }
 
             if (isDownloaded && File.Exists(zipFile))
             {
                 await Task.Run(() => File.Delete(zipFile));
-                Log("[步骤7/8] 下载文件已清理");
+                Log("[步骤6/7] ✅ 下载文件已清理");
             }
             else
             {
-                Log("[步骤7/8] 使用本地文件，保留原文件");
+                Log("[步骤6/7] ⏭️ 使用本地文件，保留原文件");
             }
         }
 
+        /// <summary>
+        /// 启动应用程序，如果配置了启动命令则执行，否则跳过
+        /// </summary>
+        /// <returns></returns>
         private async Task LaunchApplication()
         {
-            Log("[步骤8/8] 启动应用程序...");
+            Log("[步骤7/7] 🚀 启动应用程序...");
 
-            if (_AppConfig.Launch == null || string.IsNullOrEmpty(_AppConfig.Launch.File))
+            if (_AppConfig.Launch == null)
             {
-                Log("[步骤8/8] 未配置启动程序，跳过");
+                Log("[步骤7/7] ⏭️ 未配置启动程序，跳过");
                 return;
             }
 
-            var executePath = Path.Combine(_AppConfig.InstallPath, _AppConfig.Launch.File);
-
-            if (!File.Exists(executePath))
+            if (string.IsNullOrWhiteSpace(_AppConfig.Launch.Command))
             {
-                Log($"[步骤8/8] 警告：执行文件不存在: {executePath}");
+                Log("[步骤7/7] ⏭️ 未配置启动命令，跳过");
                 return;
             }
 
-            Log($"[步骤8/8] 启动程序: {_AppConfig.Launch.File}");
-            await Task.Run(() => Execute(_AppConfig.InstallPath, executePath, _AppConfig.Launch.Args));
+            Log($"[步骤7/7] 🔛 执行命令: {_AppConfig.Launch.Command} {(_AppConfig.Launch.Args ?? "")}");
+            await Task.Run(() => ExecuteCommand(_AppConfig.InstallPath, _AppConfig.Launch.Command, _AppConfig.Launch.Args));
+
+            Log("[步骤7/7] ✅ 命令执行完成");
         }
         #endregion
     }

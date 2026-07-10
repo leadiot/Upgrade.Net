@@ -1,30 +1,24 @@
 {
   "title": "测试更新",
-  "autoClose": false,
+  "autoStart": true,
+  "autoClose": true,
   "installPath": "D:\\temp\\upgrade_test",
   "installType": 1,
   "installFile": "D:\\temp\\Nas.Wpf.zip",
-  "downloadUrl":"",
-  "offline":{
-	  "file":"app_offline.htm",
-	  "time":10
+  "downloadUrl": "http://www.c-scm.net/down/Nas.Wpf.zip",
+  "oldVersion": "1.0.1",
+  "newVersion": "1.2.0",
+  "offline": {
+    "file": "app_offline.htm",
+    "time": 10
   },
   "backup": {
-	  "Path":"D:\\temp\\backup"
+    "Path": "D:\\temp\\backup"
   },
   "launch": {
-	  "File":"Scm.Net.exe",
-	  "Args":""
+    "File": "dotnet",
+    "Args": "Scm.Net.dll"
   },
-  "appInfo": {
-    "types": 1,
-    "code": "TEST_APP",
-    "name": "测试应用",
-    "content": "测试应用描述"
-  },
-  "verInfo": {
-    "ver_info": "1.0.1",
-    "ver_date": "2026-07-09",
-    "url": "http://www.c-scm.net/download/nas.wpf.zip"
-  }
+  "appInfo": "测试应用描述",
+  "verInfo": "1、新增功能\n2、更新功能\n3、优化功能\n4、移除功能"
 }

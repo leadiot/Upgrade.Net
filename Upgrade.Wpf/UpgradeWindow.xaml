@@ -235,7 +235,7 @@
                             Click="BtStart_Click"/>
                         <Button
                             x:Name="BtLaunch"
-                            Content="打开应用"
+                            Content="启动应用"
                             Style="{StaticResource SuccessButton}" 
                             Margin="12,0,0,0"
                             Click="BtLaunch_Click"
