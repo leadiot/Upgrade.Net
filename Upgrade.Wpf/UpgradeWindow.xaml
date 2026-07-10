@@ -1,13 +1,13 @@
-﻿<Window x:Class="Com.Scm.Upgrade.UpdateWindow"
+﻿<Window x:Class="Com.Scm.Upgrade.UpgradeWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Upgrade.Wpf 更新" 
         Height="600" Width="460"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
+        WindowStyle="None"
         Background="Transparent"
-        AllowsTransparency="True"
-        WindowStyle="None">
+        AllowsTransparency="True">
 
     <!-- 核心：使用 WindowChrome 实现现代无边框 -->
     <WindowChrome.WindowChrome>
@@ -175,8 +175,9 @@
                             VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <TextBlock Grid.Row="1" Margin="0,0,0,24" Text="{Binding VerInfo}">
-                    </TextBlock>
+                    <ScrollViewer Grid.Row="1" Margin="0,0,0,24" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="200">
+                        <TextBlock Text="{Binding VerInfo}" TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource TextSub}"/>
+                    </ScrollViewer>
 
                     <!-- 应用简介 -->
                     <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,12">

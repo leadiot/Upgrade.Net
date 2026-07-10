@@ -12,7 +12,7 @@ namespace Com.Scm.Upgrade
         {
             base.OnStartup(e);
 
-            var mainWindow = new UpdateWindow();
+            var mainWindow = new UpgradeWindow();
             mainWindow.Show();
 
             try

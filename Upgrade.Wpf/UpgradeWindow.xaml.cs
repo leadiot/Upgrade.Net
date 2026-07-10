@@ -10,7 +10,7 @@ using System.Windows.Threading;
 
 namespace Com.Scm.Upgrade
 {
-    public partial class UpdateWindow : Window
+    public partial class UpgradeWindow : Window
     {
         public const int MAJOR = 1;
         public const int MINOR = 0;
@@ -31,7 +31,7 @@ namespace Com.Scm.Upgrade
         private DispatcherTimer _progressTimer;
         private double _currentProgress = 0;
 
-        public UpdateWindow()
+        public UpgradeWindow()
         {
             InitializeComponent();
 
