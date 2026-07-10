@@ -98,19 +98,24 @@ Upgrade.Net is a lightweight Windows application upgrade solution that supports 
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| title | string | No | Display title of the upgrade program |
+| icon | string | Yes | Path to the application icon |
+| title | string | Yes | Display title of the upgrade program |
+| oldVersion | string | Yes | Current version of the application |
+| newVersion | string | Yes | New version of the application |
+| autoStart | bool | No | Whether to start the application after upgrade, default false |
+| autoClose | bool | No | Whether to close the updater after upgrade, default false |
 | installPath | string | Yes | Installation path of the application to be upgraded |
 | installType | string | No | Installation mode: Auto/FromZip/FromUrl, default Auto |
 | installFile | string | No | Local installation file path (required for FromZip mode) |
 | downloadUrl | string | Yes | Remote download URL (required for FromUrl mode) |
-| autoClose | bool | No | Whether to close the updater after upgrade, default true |
 | ignoreFiles | array | No | List of files to ignore during upgrade |
 | launch.command | string | No | Launch command, supports: `MyApp.exe`, `dotnet MyApp.dll`, `"C:\Program Files\MyApp.exe"` |
 | launch.args | string | No | Launch arguments, appended to the command |
 | backup.path | string | No | Backup file path |
 | offline.file | string | No | Offline display file path |
 | offline.time | int | No | Offline file countdown in seconds |
-| verInfo | string | No | Version upgrade description (displayed in WPF version) |
+| appInfo | string | No | Application description, supports longer text scrolling |
+| verInfo | string | No | Version upgrade description, supports longer text scrolling |
 
 ### InstallType Options
 
@@ -153,12 +158,6 @@ dotnet run
 cd Upgrade.Wpf
 dotnet run
 ```
-
-### Control Buttons (WPF Version)
-
-- **Start**: Start the upgrade process
-- **Pause**: Pause current download
-- **Cancel**: Cancel upgrade and exit
 
 ## Upgrade Flow
 
