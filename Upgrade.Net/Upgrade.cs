@@ -6,16 +6,17 @@ namespace Com.Scm.Upgrade
     public class Upgrade
     {
         public const int MAJOR = 1;
-        public const int MINOR = 0;
-        public const int PATCH = 0;
-        public const int BUILD = 1;
+        public const int MINOR = 1;
+        public const int PATCH = 2;
+        public const int BUILD = 2;
+        public const string RELEASE = "2026-07-10";
 
         private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
 
         public void Start()
         {
             Log("═══════════════════════════════════════════════");
-            Log($"            应用升级程序 v{MAJOR}.{MINOR}.{PATCH}.{BUILD}");
+            Log($"            Upgrade.Net v{MAJOR}.{MINOR}.{PATCH}.{BUILD}");
             Log("═══════════════════════════════════════════════");
             Log("");
 

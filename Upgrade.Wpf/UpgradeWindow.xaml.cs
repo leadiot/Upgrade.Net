@@ -14,6 +14,7 @@ namespace Com.Scm.Upgrade
         public const int MINOR = 0;
         public const int PATCH = 0;
         public const int BUILD = 1;
+        public const string RELEASE = "2026-07-10";
 
         private UpgradeWindowDvo _Dvo;
         private UpgradeConfig _AppConfig;
@@ -33,7 +34,7 @@ namespace Com.Scm.Upgrade
 
             _Dvo = new UpgradeWindowDvo();
 
-            var title = $"Upgrade.Wpf 升级 v{MAJOR}.{MINOR}.{PATCH}.{BUILD}";
+            var title = $"Upgrade.Wpf v{MAJOR}.{MINOR}.{PATCH}.{BUILD}";
             this.Title = title;
             this.TbTitle.Text = title;
 
