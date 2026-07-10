@@ -22,6 +22,7 @@ namespace Com.Scm.Upgrade
             if (config == null)
             {
                 Log("   [错误] 配置文件 upgrade.json 不存在，结束升级任务");
+                ExitApplication();
                 return;
             }
             Log("   [成功] 配置文件读取成功");
@@ -29,6 +30,7 @@ namespace Com.Scm.Upgrade
             Log("[步骤2/8] 验证配置信息...");
             if (!ValidateConfig(config))
             {
+                ExitApplication();
                 return;
             }
             Log("   [成功] 配置信息验证通过");
@@ -405,7 +407,19 @@ namespace Com.Scm.Upgrade
             var dstFile = Path.Combine(installPath, name);
             File.Copy(file, dstFile, true);
 
-            Thread.Sleep(10000);
+            Log($"   [成功] 离线文件复制完成: {dstFile}");
+
+            var seconds = config.Time;
+            if (seconds > 0)
+            {
+                for (int i = seconds; i > 0; i--)
+                {
+                    Log($"   [信息] 升级程序将在 {i} 秒后执行...");
+                    Thread.Sleep(1000);
+                }
+            }
+            Log("");
+            Log("   [信息] 升级程序已启动");
 
             return dstFile;
         }
@@ -435,9 +449,14 @@ namespace Com.Scm.Upgrade
                 return;
             }
 
+            ExitApplication();
+        }
+
+        private void ExitApplication()
+        {
             Log("");
-            Log("   [信息] 升级程序已完成，按任意键退出...");
-            Console.Read();
+            Log("[信息] 升级程序已结束，按任意键退出...");
+            Console.ReadKey();
         }
 
         private void Log(string message)

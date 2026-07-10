@@ -293,9 +293,19 @@ namespace Com.Scm.Upgrade
             await Task.Run(() =>
             {
                 File.Copy(file, dstFile, true);
-                Thread.Sleep(_AppConfig.Offline.Time * 1000);
+
+                var seconds = _AppConfig.Offline.Time;
+                if (seconds > 0)
+                {
+                    for (int i = seconds; i > 0; i--)
+                    {
+                        _Dvo.Status = $"[步骤4/8] 离线文件已复制，等待 {i} 秒...";
+                        Thread.Sleep(1000);
+                    }
+                }
             });
 
+            _Dvo.Status = "[步骤4/8] 离线文件复制完成";
             return dstFile;
         }
 
