@@ -36,53 +36,18 @@ namespace Com.Scm.Upgrade.Config
         public bool AutoClose { get; set; }
 
         /// <summary>
+        /// 是否展示升级步骤列表
+        /// 默认：false
+        /// 选项：可选
+        /// </summary>
+        public bool ShowSteps { get; set; }
+
+        /// <summary>
         /// 待升级程序安装路径
         /// 默认：当前所在目录
         /// 选项：可选
         /// </summary>
         public string InstallPath { get; set; }
-
-        /// <summary>
-        /// 待升级程序安装来源类型
-        /// 默认：Auto
-        /// 选项：必需
-        /// </summary>
-        public InstallType InstallType { get; set; }
-
-        /// <summary>
-        /// 待升级程序安装zip文件路径
-        /// 默认：空
-        /// 选项：可选（当InstallType为FromZip时必需）
-        /// </summary>
-        public string InstallFile { get; set; }
-
-        /// <summary>
-        /// 升级程序安装zip文件下载地址
-        /// 默认：空
-        /// 选项：可选（当InstallType为FromUrl时必需）
-        /// </summary>
-        public string DownloadUrl { get; set; }
-
-        /// <summary>
-        /// 离线文件路径（用于Web应用自动识别以停止服务）
-        /// 默认：空（仅IIS待应用时可以使用此配置）
-        /// 选项：可选
-        /// </summary>
-        public OfflineConfig Offline { get; set; }
-
-        /// <summary>
-        /// 升级执行前自动备份路径配置
-        /// 默认：null
-        /// 选项：可选
-        /// </summary>
-        public BackupConfig Backup { get; set; }
-
-        /// <summary>
-        /// 升级完成后重启程序的配置
-        /// 默认：null
-        /// 选项：可选
-        /// </summary>
-        public LaunchConfig Launch { get; set; }
 
         /// <summary>
         /// 升级过程中需要忽略的文件列表（如配置文件、数据库等）
@@ -105,8 +70,25 @@ namespace Com.Scm.Upgrade.Config
         /// </summary>
         public string VerInfo { get; set; }
 
+        /// <summary>
+        /// 现有版本，用于升级界面展示
+        /// 默认：null，
+        /// 选项：可选
+        /// </summary>
         public string OldVersion { get; set; }
+        /// <summary>
+        /// 目标版本，用于升级界面展示
+        /// 默认：null，
+        /// 选项：可选
+        /// </summary>
         public string NewVersion { get; set; }
+
+        /// <summary>
+        /// 升级步骤，系统按此步骤执行升级过程
+        /// 默认：null
+        /// 选项：必选
+        /// </summary>
+        public List<StepConfig> Steps { get; set; }
 
         public void LoadDefault()
         {
@@ -139,38 +121,93 @@ namespace Com.Scm.Upgrade.Config
         }
     }
 
-    public class LaunchConfig
+    public class StepConfig
     {
+        public string Name { get; set; }
+        public string Description { get; set; }
+
+        public UpgradeOption Option { get; set; }
+
+        public UpgradeAction Action { get; set; }
+    }
+
+    public class UpgradePlan
+    {
+        public string Name { get; set; }
+
+        public List<StepConfig> Steps { get; set; }
+    }
+
+    public class UpgradeResult
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; }
+    }
+
+    public class UpgradeReport
+    {
+        public UpgradeResult Result { get; set; }
+        public List<StepConfig> Steps { get; set; }
+    }
+
+    public enum UpgradeOption
+    {
+        None,
         /// <summary>
-        /// 启动命令，支持格式：
-        /// - 简单命令: "MyApp.exe"
-        /// - 带参数: "dotnet MyApp.dll"
-        /// - 完整路径: "C:\\Program Files\\MyApp.exe"
+        /// 下载文件
         /// </summary>
-        public string Command { get; set; }
-
+        Download,
         /// <summary>
-        /// 额外参数，追加到命令后面
+        /// 执行命令
         /// </summary>
-        public string Args { get; set; }
-    }
-
-    public class BackupConfig
-    {
-        public string Path { get; set; }
-    }
-
-    public class OfflineConfig
-    {
-        public string File { get; set; }
-
-        public int Time { get; set; }
-    }
-
-    public enum InstallType
-    {
-        Auto,
-        FromZip,
-        FromUrl
+        Command,
+        /// <summary>
+        /// 压缩
+        /// </summary>
+        Zip,
+        /// <summary>
+        /// 解压
+        /// </summary>
+        Unzip,
+        /// <summary>
+        /// 移动目录
+        /// </summary>
+        MoveDir,
+        /// <summary>
+        /// 移动文件
+        /// </summary>
+        MoveDoc,
+        /// <summary>
+        /// 复制目录
+        /// </summary>
+        CopyDir,
+        /// <summary>
+        /// 复制文件
+        /// </summary>
+        CopyDoc,
+        /// <summary>
+        /// 创建目录
+        /// </summary>
+        CreateDir,
+        /// <summary>
+        /// 创建文件
+        /// </summary>
+        CreateDoc,
+        /// <summary>
+        /// 删除目录
+        /// </summary>
+        DeleteDir,
+        /// <summary>
+        /// 删除文件
+        /// </summary>
+        DeleteDoc,
+        /// <summary>
+        /// 更名目录
+        /// </summary>
+        RenameDir,
+        /// <summary>
+        /// 更名文件
+        /// </summary>
+        RenameDoc
     }
 }

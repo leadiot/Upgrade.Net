@@ -2,23 +2,44 @@
   "title": "测试更新",
   "autoStart": true,
   "autoClose": false,
+  "showSteps": true,
   "installPath": "D:\\temp\\upgrade_test",
-  "installType": 1,
-  "installFile": "D:\\temp\\Nas.Wpf.zip",
-  "downloadUrl": "http://www.c-scm.net/down/Nas.Wpf.zip",
   "oldVersion": "1.0.1",
   "newVersion": "1.2.0",
-  "offline": {
-    "file": "app_offline.htm",
-    "time": 10
-  },
-  "backup": {
-    "Path": "D:\\temp\\backup"
-  },
-  "launch": {
-    "Command": "Notepad",
-    "Args": ""
-  },
   "appInfo": "测试应用描述",
-  "verInfo": "1、新增功能\n2、更新功能\n3、优化功能\n4、移除功能"
+  "verInfo": "1、新增功能\n2、更新功能\n3、优化功能\n4、移除功能",
+  "steps": [
+    {
+      "option": 1,
+      "title": "",
+      "desc": "",
+      "waitTime": 1,
+      "path": "",
+      "source": ""
+    },
+    {
+      "option": 1,
+      "title": "",
+      "desc": "",
+      "waitTime": 1,
+      "source": "",
+      "dest": ""
+    },
+    {
+      "option": 1,
+      "title": "",
+      "desc": "",
+      "waitTime": 1,
+      "url": "",
+      "file": ""
+    },
+    {
+      "option": 1,
+      "title": "",
+      "desc": "",
+      "waitTime": 1,
+      "Command": "",
+      "Args": ""
+    }
+  ]
 }
