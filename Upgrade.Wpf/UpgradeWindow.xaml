@@ -112,7 +112,7 @@
                     <Button x:Name="BtCloseWindow" Content="✕" Width="46" Height="32" 
                             HorizontalAlignment="Right" VerticalAlignment="Top"
                             Background="Transparent" BorderThickness="0" Foreground="White"
-                            FontSize="14" Cursor="Hand" Click="BtCloseWindow_Click">
+                            FontSize="14" Cursor="Hand" Command="{Binding CloseWindowCommand}">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="border" Background="Transparent">
@@ -302,20 +302,25 @@
                             Content="稍后提醒"
                             Style="{StaticResource SecondaryButton}" 
                             Margin="12,0,0,0"
-                            Click="BtLater_Click"/>
+                            Command="{Binding LaterCommand}"
+                            IsEnabled="{Binding LaterEnabled}"
+                            Visibility="{Binding LaterVisibility}"/>
                         <Button
                             x:Name="BtStart"
-                            Content="立即更新"
+                            Content="{Binding StartButtonText}"
                             Style="{StaticResource PrimaryButton}" 
                             Margin="12,0,0,0"
-                            Click="BtStart_Click"/>
+                            Command="{Binding StartCommand}"
+                            IsEnabled="{Binding StartEnabled}"
+                            Visibility="{Binding StartVisibility}"/>
                         <Button
                             x:Name="BtClose"
                             Content="退出"
                             Style="{StaticResource SuccessButton}" 
                             Margin="12,0,0,0"
-                            Click="BtClose_Click"
-                            Visibility="Collapsed"/>
+                            Command="{Binding CloseCommand}"
+                            IsEnabled="{Binding CloseEnabled}"
+                            Visibility="{Binding CloseVisibility}"/>
                     </StackPanel>
                 </Grid>
             </Border>

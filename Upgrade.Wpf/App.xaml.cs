@@ -3,17 +3,11 @@ using System.Windows;
 
 namespace Com.Scm.Upgrade
 {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
     public partial class App : Application
     {
-        protected override async void OnStartup(StartupEventArgs e)
+        protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-
-            var mainWindow = new UpgradeWindow();
-            mainWindow.Show();
 
             try
             {
@@ -24,7 +18,8 @@ namespace Com.Scm.Upgrade
                     settings.LoadDefault();
                 }
 
-                mainWindow.Init(settings);
+                var mainWindow = new UpgradeWindow(settings);
+                mainWindow.Show();
             }
             catch
             {
