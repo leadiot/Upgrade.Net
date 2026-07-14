@@ -235,11 +235,11 @@
                             Margin="12,0,0,0"
                             Click="BtStart_Click"/>
                         <Button
-                            x:Name="BtLaunch"
-                            Content="启动应用"
+                            x:Name="BtClose"
+                            Content="退出"
                             Style="{StaticResource SuccessButton}" 
                             Margin="12,0,0,0"
-                            Click="BtLaunch_Click"
+                            Click="BtClose_Click"
                             Visibility="Collapsed"/>
                     </StackPanel>
                 </Grid>

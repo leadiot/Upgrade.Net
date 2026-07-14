@@ -90,6 +90,24 @@ namespace Com.Scm.Upgrade.Config
         /// </summary>
         public List<StepConfig> Steps { get; set; }
 
+        public string Url { get; set; }
+
+        public string DownloadUrl { get; set; }
+
+        public string InstallFile { get; set; }
+
+        public InstallType InstallType { get; set; }
+
+        public bool AutoBackup { get; set; }
+
+        public string BackupPath { get; set; }
+
+        public LaunchConfig Launch { get; set; }
+
+        public BackupConfig Backup { get; set; }
+
+        public OfflineConfig Offline { get; set; }
+
         public void LoadDefault()
         {
             Title = "Upgrade.Wpf更新";
@@ -123,31 +141,46 @@ namespace Com.Scm.Upgrade.Config
 
     public class StepConfig
     {
-        public string Name { get; set; }
+        public string Title { get; set; }
+
         public string Description { get; set; }
 
         public UpgradeOption Option { get; set; }
 
-        public UpgradeAction Action { get; set; }
-    }
+        public int WaitTime { get; set; }
 
-    public class UpgradePlan
-    {
-        public string Name { get; set; }
+        public bool ContinueOnError { get; set; }
 
-        public List<StepConfig> Steps { get; set; }
+        public int RetryCount { get; set; }
+
+        public int RetryDelay { get; set; } = 1000;
+
+        public string Source { get; set; }
+
+        public string Destination { get; set; }
+
+        public string File { get; set; }
+
+        public string Path { get; set; }
+
+        public string Url { get; set; }
+
+        public string Command { get; set; }
+
+        public string Args { get; set; }
+
+        public string OldName { get; set; }
+
+        public string NewName { get; set; }
+
+        public bool Overwrite { get; set; } = true;
     }
 
     public class UpgradeResult
     {
         public bool Success { get; set; }
-        public string Message { get; set; }
-    }
 
-    public class UpgradeReport
-    {
-        public UpgradeResult Result { get; set; }
-        public List<StepConfig> Steps { get; set; }
+        public string Message { get; set; }
     }
 
     public enum UpgradeOption
@@ -209,5 +242,42 @@ namespace Com.Scm.Upgrade.Config
         /// 更名文件
         /// </summary>
         RenameDoc
+    }
+
+    public enum InstallType
+    {
+        Auto,
+        FromZip,
+        FromUrl
+    }
+
+    public class UpgradeAction
+    {
+        public UpgradeOption Option { get; set; }
+
+        public string Title { get; set; }
+
+        public string Description { get; set; }
+
+        public Func<StepConfig, UpgradeResult> Execute { get; set; }
+    }
+
+    public class LaunchConfig
+    {
+        public string Command { get; set; }
+
+        public string Args { get; set; }
+    }
+
+    public class BackupConfig
+    {
+        public string Path { get; set; }
+    }
+
+    public class OfflineConfig
+    {
+        public string File { get; set; }
+
+        public int Time { get; set; }
     }
 }
