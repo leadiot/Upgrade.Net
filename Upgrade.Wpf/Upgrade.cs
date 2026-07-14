@@ -20,6 +20,8 @@ namespace Com.Scm.Upgrade
 
         public event Action<int, string> ProgressChanged;
 
+        public event Action<int, string, string, bool> StepStatusChanged;
+
         public Upgrade()
         {
             InitializeActions();
@@ -222,6 +224,7 @@ namespace Com.Scm.Upgrade
                 if (action == null)
                 {
                     Log($"[步骤{stepNumber}/{config.Steps.Count}] [跳过] 未知操作类型：{step.Option}");
+                    StepStatusChanged?.Invoke(stepNumber, "未知操作", "跳过", false);
                     continue;
                 }
 
@@ -231,11 +234,15 @@ namespace Com.Scm.Upgrade
                 Log($"[步骤{stepNumber}/{config.Steps.Count}] {title}");
                 Log($"   {description}");
 
+                StepStatusChanged?.Invoke(stepNumber, title, "执行中", false);
+
                 var result = ExecuteStepWithRetry(step, action, stepNumber);
 
                 if (!result.Success)
                 {
                     failedSteps.Add(stepNumber);
+
+                    StepStatusChanged?.Invoke(stepNumber, title, result.Message, false);
 
                     if (!step.ContinueOnError)
                     {
@@ -248,6 +255,8 @@ namespace Com.Scm.Upgrade
                 else
                 {
                     Log($"   [完成] {result.Message}");
+
+                    StepStatusChanged?.Invoke(stepNumber, title, result.Message, true);
 
                     if (step.WaitTime > 0)
                     {

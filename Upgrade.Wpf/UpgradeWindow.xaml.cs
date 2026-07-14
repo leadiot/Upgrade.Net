@@ -40,6 +40,7 @@ namespace Com.Scm.Upgrade
             _Upgrade = new Upgrade();
             _Upgrade.LogMessage += OnLogMessage;
             _Upgrade.ProgressChanged += OnProgressChanged;
+            _Upgrade.StepStatusChanged += OnStepStatusChanged;
 
             var title = $"Upgrade.Wpf v{MAJOR}.{MINOR}.{PATCH}.{BUILD}";
             this.Title = title;
@@ -182,6 +183,8 @@ namespace Com.Scm.Upgrade
             {
                 try
                 {
+                    Dispatcher.Invoke(() => InitializeStepList(_AppConfig));
+
                     Log("开始升级流程...");
 
                     _Upgrade.Start();
@@ -233,6 +236,64 @@ namespace Com.Scm.Upgrade
                 _Dvo.Percent = percent;
                 Log(status);
             });
+        }
+
+        private void OnStepStatusChanged(int stepNumber, string title, string message, bool success)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (_Dvo.Steps.Count >= stepNumber)
+                {
+                    var stepItem = _Dvo.Steps[stepNumber - 1];
+                    stepItem.Title = title;
+                    stepItem.Message = message;
+                    stepItem.Status = message == "跳过" ? StepStatus.Skipped :
+                                       message == "执行中" ? StepStatus.Running :
+                                       success ? StepStatus.Success : StepStatus.Failed;
+                }
+            });
+        }
+
+        private void InitializeStepList(UpgradeConfig config)
+        {
+            _Dvo.Steps.Clear();
+
+            if (config.Steps != null && config.Steps.Count > 0)
+            {
+                foreach (var step in config.Steps)
+                {
+                    _Dvo.Steps.Add(new StepItemDvo
+                    {
+                        StepNumber = _Dvo.Steps.Count + 1,
+                        Title = string.IsNullOrEmpty(step.Title) ? GetActionTitle(step.Option) : step.Title,
+                        Status = StepStatus.Pending,
+                        Message = "等待执行"
+                    });
+                }
+            }
+        }
+
+        private string GetActionTitle(UpgradeOption option)
+        {
+            var actions = new Dictionary<UpgradeOption, string>
+            {
+                { UpgradeOption.Download, "下载文件" },
+                { UpgradeOption.Command, "执行命令" },
+                { UpgradeOption.Zip, "压缩文件" },
+                { UpgradeOption.Unzip, "解压文件" },
+                { UpgradeOption.MoveDir, "移动目录" },
+                { UpgradeOption.MoveDoc, "移动文件" },
+                { UpgradeOption.CopyDir, "复制目录" },
+                { UpgradeOption.CopyDoc, "复制文件" },
+                { UpgradeOption.CreateDir, "创建目录" },
+                { UpgradeOption.CreateDoc, "创建文件" },
+                { UpgradeOption.DeleteDir, "删除目录" },
+                { UpgradeOption.DeleteDoc, "删除文件" },
+                { UpgradeOption.RenameDir, "重命名目录" },
+                { UpgradeOption.RenameDoc, "重命名文件" }
+            };
+
+            return actions.TryGetValue(option, out var title) ? title : "未知操作";
         }
         #endregion
     }

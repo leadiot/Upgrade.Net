@@ -1,4 +1,5 @@
 using Com.Scm.Upgrade.Dvo;
+using System.Collections.ObjectModel;
 using System.Windows.Media;
 
 namespace Com.Scm.Upgrade
@@ -51,5 +52,19 @@ namespace Com.Scm.Upgrade
         private double percent;
         public double Percent { get { return percent; } set { percent = value; OnPropertyChanged(nameof(Percent)); } }
 
+        /// <summary>
+        /// 步骤列表
+        /// </summary>
+        private ObservableCollection<StepItemDvo> steps;
+        public ObservableCollection<StepItemDvo> Steps
+        {
+            get { return steps; }
+            set { steps = value; OnPropertyChanged(nameof(Steps)); }
+        }
+
+        public UpgradeWindowDvo()
+        {
+            Steps = new ObservableCollection<StepItemDvo>();
+        }
     }
 }
