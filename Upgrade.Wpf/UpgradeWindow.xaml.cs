@@ -13,7 +13,7 @@ namespace Com.Scm.Upgrade
         public const int MAJOR = 1;
         public const int MINOR = 0;
         public const int PATCH = 2;
-        public const int BUILD = 2;
+        public const int BUILD = 3;
         public const string RELEASE = "2026-07-14";
 
         private UpgradeWindowDvo _Dvo;
@@ -22,6 +22,8 @@ namespace Com.Scm.Upgrade
         private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
 
         private bool _Running;
+
+        private StreamWriter _Writer;
 
         public UpgradeWindow()
         {
@@ -33,6 +35,8 @@ namespace Com.Scm.Upgrade
             _AppConfig = appConfig;
 
             _Dvo = new UpgradeWindowDvo();
+
+            _Writer = new StreamWriter("Upgrade.log");
 
             var title = $"Upgrade.Wpf v{MAJOR}.{MINOR}.{PATCH}.{BUILD}";
             this.Title = title;
@@ -136,6 +140,15 @@ namespace Com.Scm.Upgrade
         private void Log(string message)
         {
             _Dvo.Notice = message;
+            LogFiles(message);
+        }
+
+        private void LogFiles(string message)
+        {
+            if (_Writer != null)
+            {
+                _Writer.WriteLine(message);
+            }
         }
 
         private string FormatFileSize(long size)
@@ -251,6 +264,21 @@ namespace Com.Scm.Upgrade
             }
 
             return Tuple.Create(command, string.Empty);
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (_Token != null && !_Token.IsCancellationRequested)
+            {
+                _Token.Cancel();
+            }
+            if (_Writer != null)
+            {
+                _Writer.Flush();
+                _Writer.Close();
+                _Writer.Dispose();
+                _Writer = null;
+            }
         }
         #endregion
 
@@ -552,9 +580,6 @@ namespace Com.Scm.Upgrade
 
             await Task.Run(() =>
             {
-                var fileName = Path.GetFileNameWithoutExtension(zipPath);
-                //fileName += "/";
-
                 using (var archive = ZipFile.OpenRead(zipPath))
                 {
                     var entries = archive.Entries.ToList();
@@ -569,25 +594,25 @@ namespace Com.Scm.Upgrade
                     }
 
                     Log($"[步骤5/7] 📦 准备解压 {totalEntries} 个文件...");
+                    LogFiles("解压目标目录：" + _AppConfig.InstallPath);
 
                     foreach (var entry in entries)
                     {
-                        var path = TrimStart(entry.FullName, fileName);
+                        var path = Path.Combine(_AppConfig.InstallPath, entry.FullName);
                         if (path.EndsWith("/"))
                         {
-                            var dirPath = Path.Combine(_AppConfig.InstallPath, path);
-                            Directory.CreateDirectory(dirPath);
+                            Directory.CreateDirectory(path);
                             processedEntries++;
                             continue;
                         }
 
-                        var docPath = Path.Combine(_AppConfig.InstallPath, path);
+                        LogFiles("解压文件：" + path);
 
                         bool shouldIgnore = false;
                         if (_AppConfig.IgnoreFiles != null && _AppConfig.IgnoreFiles.Any(ignore =>
                             path.Contains(ignore, StringComparison.OrdinalIgnoreCase)))
                         {
-                            if (File.Exists(docPath))
+                            if (File.Exists(path))
                             {
                                 shouldIgnore = true;
                                 ignoredCount++;
@@ -596,8 +621,8 @@ namespace Com.Scm.Upgrade
 
                         if (!shouldIgnore)
                         {
-                            Directory.CreateDirectory(Path.GetDirectoryName(docPath));
-                            entry.ExtractToFile(docPath, true);
+                            Directory.CreateDirectory(Path.GetDirectoryName(path));
+                            entry.ExtractToFile(path, true);
                         }
 
                         processedEntries++;
@@ -609,19 +634,6 @@ namespace Com.Scm.Upgrade
             });
 
             Log("[步骤5/7] ✅ 文件解压完成");
-        }
-
-        private string TrimStart(string path, string start)
-        {
-            if (string.IsNullOrEmpty(path))
-            {
-                return string.Empty;
-            }
-            if (path.StartsWith(start, StringComparison.OrdinalIgnoreCase))
-            {
-                return path.Substring(start.Length);
-            }
-            return path;
         }
 
         private async Task CleanupFiles(string offlineFile, string zipFile, bool isDownloaded)
