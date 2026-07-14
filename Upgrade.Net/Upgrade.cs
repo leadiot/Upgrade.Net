@@ -7,9 +7,9 @@ namespace Com.Scm.Upgrade
     {
         public const int MAJOR = 1;
         public const int MINOR = 1;
-        public const int PATCH = 2;
-        public const int BUILD = 2;
-        public const string RELEASE = "2026-07-10";
+        public const int PATCH = 3;
+        public const int BUILD = 3;
+        public const string RELEASE = "2026-07-14";
 
         private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
 
@@ -220,6 +220,9 @@ namespace Com.Scm.Upgrade
         {
             var result = new ExtractResult { ProcessedCount = 0, SkippedCount = 0, SkippedFiles = new List<string>() };
 
+            var fileName = Path.GetFileNameWithoutExtension(zipPath);
+            fileName += "/";
+
             using (var archive = ZipFile.OpenRead(zipPath))
             {
                 var entries = archive.Entries.ToList();
@@ -243,8 +246,9 @@ namespace Com.Scm.Upgrade
                         continue;
                     }
 
-                    var destPath = Path.Combine(installPath, entry.FullName);
-                    var relativePath = entry.FullName;
+                    var fullName = TrimStart(entry.FullName, fileName);
+                    var destPath = Path.Combine(installPath, fullName);
+                    var relativePath = fullName;
 
                     bool shouldIgnore = false;
                     if (ignoreFiles != null && ignoreFiles.Any(ignore => relativePath.Contains(ignore, StringComparison.OrdinalIgnoreCase)))
@@ -529,6 +533,19 @@ namespace Com.Scm.Upgrade
             Log("");
             Log("[信息] 升级程序已结束，按任意键退出...");
             Console.ReadKey();
+        }
+
+        private string TrimStart(string path, string start)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return string.Empty;
+            }
+            if (path.StartsWith(start, StringComparison.OrdinalIgnoreCase))
+            {
+                return path.Substring(start.Length);
+            }
+            return path;
         }
 
         private void Log(string message)

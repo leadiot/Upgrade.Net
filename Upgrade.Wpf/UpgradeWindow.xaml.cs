@@ -12,9 +12,9 @@ namespace Com.Scm.Upgrade
     {
         public const int MAJOR = 1;
         public const int MINOR = 0;
-        public const int PATCH = 0;
-        public const int BUILD = 1;
-        public const string RELEASE = "2026-07-10";
+        public const int PATCH = 2;
+        public const int BUILD = 2;
+        public const string RELEASE = "2026-07-14";
 
         private UpgradeWindowDvo _Dvo;
         private UpgradeConfig _AppConfig;
@@ -552,6 +552,9 @@ namespace Com.Scm.Upgrade
 
             await Task.Run(() =>
             {
+                var fileName = Path.GetFileNameWithoutExtension(zipPath);
+                fileName += "/";
+
                 using (var archive = ZipFile.OpenRead(zipPath))
                 {
                     var entries = archive.Entries.ToList();
@@ -577,8 +580,9 @@ namespace Com.Scm.Upgrade
                             continue;
                         }
 
-                        var destPath = Path.Combine(_AppConfig.InstallPath, entry.FullName);
-                        var relativePath = entry.FullName;
+                        var fullName = TrimStart(entry.FullName, fileName);
+                        var destPath = Path.Combine(_AppConfig.InstallPath, fullName);
+                        var relativePath = fullName;
 
                         bool shouldIgnore = false;
                         if (_AppConfig.IgnoreFiles != null && _AppConfig.IgnoreFiles.Any(ignore =>
@@ -606,6 +610,19 @@ namespace Com.Scm.Upgrade
             });
 
             Log("[步骤5/7] ✅ 文件解压完成");
+        }
+
+        private string TrimStart(string path, string start)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return string.Empty;
+            }
+            if (path.StartsWith(start, StringComparison.OrdinalIgnoreCase))
+            {
+                return path.Substring(start.Length);
+            }
+            return path;
         }
 
         private async Task CleanupFiles(string offlineFile, string zipFile, bool isDownloaded)
