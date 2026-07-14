@@ -11,8 +11,8 @@ namespace Com.Scm.Upgrade
         public const int BUILD = 3;
         public const string RELEASE = "2026-07-14";
 
-        private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
-        private readonly Dictionary<UpgradeOption, UpgradeAction> _actions = new Dictionary<UpgradeOption, UpgradeAction>();
+        private static readonly HttpClient _HttpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
+        private readonly Dictionary<UpgradeOption, UpgradeAction> _Actions = new Dictionary<UpgradeOption, UpgradeAction>();
 
         public Upgrade()
         {
@@ -21,7 +21,7 @@ namespace Com.Scm.Upgrade
 
         private void InitializeActions()
         {
-            _actions[UpgradeOption.Download] = new UpgradeAction
+            _Actions[UpgradeOption.Download] = new UpgradeAction
             {
                 Option = UpgradeOption.Download,
                 Title = "下载文件",
@@ -29,7 +29,7 @@ namespace Com.Scm.Upgrade
                 Execute = ExecuteDownload
             };
 
-            _actions[UpgradeOption.Command] = new UpgradeAction
+            _Actions[UpgradeOption.Command] = new UpgradeAction
             {
                 Option = UpgradeOption.Command,
                 Title = "执行命令",
@@ -37,7 +37,7 @@ namespace Com.Scm.Upgrade
                 Execute = ExecuteCommand
             };
 
-            _actions[UpgradeOption.Zip] = new UpgradeAction
+            _Actions[UpgradeOption.Zip] = new UpgradeAction
             {
                 Option = UpgradeOption.Zip,
                 Title = "压缩文件",
@@ -45,7 +45,7 @@ namespace Com.Scm.Upgrade
                 Execute = ExecuteZip
             };
 
-            _actions[UpgradeOption.Unzip] = new UpgradeAction
+            _Actions[UpgradeOption.Unzip] = new UpgradeAction
             {
                 Option = UpgradeOption.Unzip,
                 Title = "解压文件",
@@ -53,7 +53,7 @@ namespace Com.Scm.Upgrade
                 Execute = ExecuteUnzip
             };
 
-            _actions[UpgradeOption.MoveDir] = new UpgradeAction
+            _Actions[UpgradeOption.MoveDir] = new UpgradeAction
             {
                 Option = UpgradeOption.MoveDir,
                 Title = "移动目录",
@@ -61,7 +61,7 @@ namespace Com.Scm.Upgrade
                 Execute = ExecuteMoveDir
             };
 
-            _actions[UpgradeOption.MoveDoc] = new UpgradeAction
+            _Actions[UpgradeOption.MoveDoc] = new UpgradeAction
             {
                 Option = UpgradeOption.MoveDoc,
                 Title = "移动文件",
@@ -69,7 +69,7 @@ namespace Com.Scm.Upgrade
                 Execute = ExecuteMoveDoc
             };
 
-            _actions[UpgradeOption.CopyDir] = new UpgradeAction
+            _Actions[UpgradeOption.CopyDir] = new UpgradeAction
             {
                 Option = UpgradeOption.CopyDir,
                 Title = "复制目录",
@@ -77,7 +77,7 @@ namespace Com.Scm.Upgrade
                 Execute = ExecuteCopyDir
             };
 
-            _actions[UpgradeOption.CopyDoc] = new UpgradeAction
+            _Actions[UpgradeOption.CopyDoc] = new UpgradeAction
             {
                 Option = UpgradeOption.CopyDoc,
                 Title = "复制文件",
@@ -85,7 +85,7 @@ namespace Com.Scm.Upgrade
                 Execute = ExecuteCopyDoc
             };
 
-            _actions[UpgradeOption.CreateDir] = new UpgradeAction
+            _Actions[UpgradeOption.CreateDir] = new UpgradeAction
             {
                 Option = UpgradeOption.CreateDir,
                 Title = "创建目录",
@@ -93,7 +93,7 @@ namespace Com.Scm.Upgrade
                 Execute = ExecuteCreateDir
             };
 
-            _actions[UpgradeOption.CreateDoc] = new UpgradeAction
+            _Actions[UpgradeOption.CreateDoc] = new UpgradeAction
             {
                 Option = UpgradeOption.CreateDoc,
                 Title = "创建文件",
@@ -101,7 +101,7 @@ namespace Com.Scm.Upgrade
                 Execute = ExecuteCreateDoc
             };
 
-            _actions[UpgradeOption.DeleteDir] = new UpgradeAction
+            _Actions[UpgradeOption.DeleteDir] = new UpgradeAction
             {
                 Option = UpgradeOption.DeleteDir,
                 Title = "删除目录",
@@ -109,7 +109,7 @@ namespace Com.Scm.Upgrade
                 Execute = ExecuteDeleteDir
             };
 
-            _actions[UpgradeOption.DeleteDoc] = new UpgradeAction
+            _Actions[UpgradeOption.DeleteDoc] = new UpgradeAction
             {
                 Option = UpgradeOption.DeleteDoc,
                 Title = "删除文件",
@@ -117,7 +117,7 @@ namespace Com.Scm.Upgrade
                 Execute = ExecuteDeleteDoc
             };
 
-            _actions[UpgradeOption.RenameDir] = new UpgradeAction
+            _Actions[UpgradeOption.RenameDir] = new UpgradeAction
             {
                 Option = UpgradeOption.RenameDir,
                 Title = "重命名目录",
@@ -125,7 +125,7 @@ namespace Com.Scm.Upgrade
                 Execute = ExecuteRenameDir
             };
 
-            _actions[UpgradeOption.RenameDoc] = new UpgradeAction
+            _Actions[UpgradeOption.RenameDoc] = new UpgradeAction
             {
                 Option = UpgradeOption.RenameDoc,
                 Title = "重命名文件",
@@ -175,17 +175,7 @@ namespace Com.Scm.Upgrade
                 }
                 else
                 {
-                    var legacySteps = BuildLegacySteps(config);
-                    if (legacySteps.Count > 0)
-                    {
-                        config.Steps = legacySteps;
-                        Log("[信息] 使用传统配置模式，自动构建升级步骤");
-                        ExecuteSteps(config);
-                    }
-                    else
-                    {
-                        Log("[警告] 未配置升级步骤，请在 upgrade.json 中配置 Steps");
-                    }
+                    Log("[警告] 未配置升级步骤，请在 upgrade.json 中配置 Steps");
                 }
 
                 Log("");
@@ -249,8 +239,13 @@ namespace Com.Scm.Upgrade
 
                     if (step.WaitTime > 0)
                     {
-                        Log($"   [等待] 等待 {step.WaitTime} 秒...");
-                        Thread.Sleep(step.WaitTime * 1000);
+                        Log($"   [等待] 开始等待 {step.WaitTime} 秒...");
+                        for (int remaining = step.WaitTime; remaining > 0; remaining--)
+                        {
+                            Log($"   [等待] 剩余 {remaining} 秒...");
+                            Thread.Sleep(1000);
+                        }
+                        Log($"   [等待] 等待完成");
                     }
                 }
 
@@ -302,165 +297,8 @@ namespace Com.Scm.Upgrade
 
         private UpgradeAction GetAction(UpgradeOption option)
         {
-            _actions.TryGetValue(option, out var action);
+            _Actions.TryGetValue(option, out var action);
             return action;
-        }
-
-        private List<StepConfig> BuildLegacySteps(UpgradeConfig config)
-        {
-            var steps = new List<StepConfig>();
-
-            if (!string.IsNullOrEmpty(config.Url))
-            {
-                var installPath = string.IsNullOrEmpty(config.InstallPath) 
-                    ? AppDomain.CurrentDomain.BaseDirectory 
-                    : config.InstallPath;
-
-                var downloadFile = Path.Combine(installPath, "update.zip");
-
-                steps.Add(new StepConfig
-                {
-                    Option = UpgradeOption.Download,
-                    Title = "下载更新包",
-                    Description = "从远程服务器下载更新包",
-                    WaitTime = 0,
-                    Url = config.Url,
-                    File = downloadFile
-                });
-
-                if ((config.AutoBackup || config.Backup != null) && 
-                    (!string.IsNullOrEmpty(config.BackupPath) || (config.Backup != null && !string.IsNullOrEmpty(config.Backup.Path))))
-                {
-                    var backupPath = !string.IsNullOrEmpty(config.BackupPath) 
-                        ? config.BackupPath 
-                        : (config.Backup?.Path ?? installPath);
-
-                    var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-                    var backupFile = Path.Combine(backupPath, $"backup_{timestamp}.zip");
-
-                    steps.Add(new StepConfig
-                    {
-                        Option = UpgradeOption.Zip,
-                        Title = "备份现有文件",
-                        Description = "备份当前版本文件",
-                        WaitTime = 0,
-                        Source = installPath,
-                        Destination = backupFile
-                    });
-                }
-
-                steps.Add(new StepConfig
-                {
-                    Option = UpgradeOption.Unzip,
-                    Title = "解压更新包",
-                    Description = "将更新包解压到安装目录",
-                    WaitTime = 0,
-                    Source = downloadFile,
-                    Destination = installPath,
-                    Overwrite = true
-                });
-
-                if (config.Launch != null && !string.IsNullOrEmpty(config.Launch.Command))
-                {
-                    steps.Add(new StepConfig
-                    {
-                        Option = UpgradeOption.Command,
-                        Title = "启动应用程序",
-                        Description = "启动升级后的应用程序",
-                        WaitTime = 0,
-                        Command = config.Launch.Command,
-                        Args = config.Launch.Args,
-                        Path = installPath
-                    });
-                }
-
-                steps.Add(new StepConfig
-                {
-                    Option = UpgradeOption.DeleteDoc,
-                    Title = "清理临时文件",
-                    Description = "删除下载的更新包",
-                    WaitTime = 0,
-                    Path = downloadFile,
-                    ContinueOnError = true
-                });
-            }
-            else if (config.Offline != null && !string.IsNullOrEmpty(config.Offline.File))
-            {
-                var installPath = string.IsNullOrEmpty(config.InstallPath)
-                    ? AppDomain.CurrentDomain.BaseDirectory
-                    : config.InstallPath;
-
-                var offlineFile = config.Offline.File;
-                var destFile = Path.Combine(installPath, Path.GetFileName(offlineFile));
-
-                steps.Add(new StepConfig
-                {
-                    Option = UpgradeOption.CopyDoc,
-                    Title = "复制离线升级文件",
-                    Description = "将离线升级文件复制到安装目录",
-                    WaitTime = 0,
-                    Source = offlineFile,
-                    Destination = destFile,
-                    Overwrite = true
-                });
-
-                if (config.Offline.Time > 0)
-                {
-                    for (int i = config.Offline.Time; i > 0; i--)
-                    {
-                        Log($"   [等待] 倒计时：{i} 秒");
-                        Thread.Sleep(1000);
-                    }
-                }
-
-                if ((config.AutoBackup || config.Backup != null) &&
-                    (!string.IsNullOrEmpty(config.BackupPath) || (config.Backup != null && !string.IsNullOrEmpty(config.Backup.Path))))
-                {
-                    var backupPath = !string.IsNullOrEmpty(config.BackupPath)
-                        ? config.BackupPath
-                        : (config.Backup?.Path ?? installPath);
-
-                    var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-                    var backupFile = Path.Combine(backupPath, $"backup_{timestamp}.zip");
-
-                    steps.Add(new StepConfig
-                    {
-                        Option = UpgradeOption.Zip,
-                        Title = "备份现有文件",
-                        Description = "备份当前版本文件",
-                        WaitTime = 0,
-                        Source = installPath,
-                        Destination = backupFile
-                    });
-                }
-
-                steps.Add(new StepConfig
-                {
-                    Option = UpgradeOption.Unzip,
-                    Title = "解压更新包",
-                    Description = "将更新包解压到安装目录",
-                    WaitTime = 0,
-                    Source = destFile,
-                    Destination = installPath,
-                    Overwrite = true
-                });
-
-                if (config.Launch != null && !string.IsNullOrEmpty(config.Launch.Command))
-                {
-                    steps.Add(new StepConfig
-                    {
-                        Option = UpgradeOption.Command,
-                        Title = "启动应用程序",
-                        Description = "启动升级后的应用程序",
-                        WaitTime = 0,
-                        Command = config.Launch.Command,
-                        Args = config.Launch.Args,
-                        Path = installPath
-                    });
-                }
-            }
-
-            return steps;
         }
 
         private UpgradeResult ExecuteDownload(StepConfig step)
@@ -478,7 +316,7 @@ namespace Com.Scm.Upgrade
             {
                 Log($"   [下载] 从 {step.Url} 下载到 {destPath}");
 
-                var response = _httpClient.GetAsync(step.Url, HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult();
+                var response = _HttpClient.GetAsync(step.Url, HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult();
                 response.EnsureSuccessStatusCode();
 
                 var totalBytes = response.Content.Headers.ContentLength ?? -1;
@@ -734,13 +572,8 @@ namespace Com.Scm.Upgrade
             try
             {
                 Log($"   [移动] 目录：{step.Source} -> {step.Destination}");
-
-                if (Directory.Exists(step.Destination) && step.Overwrite)
-                {
-                    Directory.Delete(step.Destination, true);
-                }
-
-                Directory.Move(step.Source, step.Destination);
+                MoveDirectory(step.Source, step.Destination, step.Overwrite);
+                Directory.Delete(step.Source, true);
 
                 return new UpgradeResult { Success = true, Message = "目录移动完成" };
             }
@@ -1032,19 +865,36 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private void CopyDirectory(string sourceDir, string destDir, bool overwrite)
+        private void MoveDirectory(string sourceDir, string destinationDir, bool overwrite)
         {
-            Directory.CreateDirectory(destDir);
+            Directory.CreateDirectory(destinationDir);
 
             foreach (var file in Directory.GetFiles(sourceDir))
             {
-                var destFile = Path.Combine(destDir, Path.GetFileName(file));
+                var destFile = Path.Combine(destinationDir, Path.GetFileName(file));
+                File.Move(file, destFile, overwrite);
+            }
+
+            foreach (var subDir in Directory.GetDirectories(sourceDir))
+            {
+                var destSubDir = Path.Combine(destinationDir, Path.GetFileName(subDir));
+                MoveDirectory(subDir, destSubDir, overwrite);
+            }
+        }
+
+        private void CopyDirectory(string sourceDir, string destinationDir, bool overwrite)
+        {
+            Directory.CreateDirectory(destinationDir);
+
+            foreach (var file in Directory.GetFiles(sourceDir))
+            {
+                var destFile = Path.Combine(destinationDir, Path.GetFileName(file));
                 File.Copy(file, destFile, overwrite);
             }
 
             foreach (var subDir in Directory.GetDirectories(sourceDir))
             {
-                var destSubDir = Path.Combine(destDir, Path.GetFileName(subDir));
+                var destSubDir = Path.Combine(destinationDir, Path.GetFileName(subDir));
                 CopyDirectory(subDir, destSubDir, overwrite);
             }
         }

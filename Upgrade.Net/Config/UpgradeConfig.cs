@@ -89,18 +89,6 @@ namespace Com.Scm.Upgrade.Config
         /// </summary>
         public List<StepConfig> Steps { get; set; }
 
-        public string Url { get; set; }
-
-        public bool AutoBackup { get; set; }
-
-        public string BackupPath { get; set; }
-
-        public LaunchConfig Launch { get; set; }
-
-        public BackupConfig Backup { get; set; }
-
-        public OfflineConfig Offline { get; set; }
-
         public void LoadDefault()
         {
             Title = "Upgrade.Wpf更新";
@@ -133,38 +121,89 @@ namespace Com.Scm.Upgrade.Config
 
     public class StepConfig
     {
+        /// <summary>
+        /// 步骤标题
+        /// </summary>
         public string Title { get; set; }
 
+        /// <summary>
+        /// 步骤说明
+        /// </summary>
         public string Description { get; set; }
 
+        /// <summary>
+        /// 操作类型
+        /// </summary>
         public UpgradeOption Option { get; set; }
 
+        /// <summary>
+        /// （操作完成后）等待时间
+        /// </summary>
         public int WaitTime { get; set; }
 
+        /// <summary>
+        /// 错误时是否继续
+        /// </summary>
         public bool ContinueOnError { get; set; }
 
+        /// <summary>
+        /// 重试次数
+        /// </summary>
         public int RetryCount { get; set; }
 
+        /// <summary>
+        /// 重试等待时间（单位毫秒）
+        /// </summary>
         public int RetryDelay { get; set; } = 1000;
 
+        /// <summary>
+        /// 来源文件或路径
+        /// </summary>
         public string Source { get; set; }
 
+        /// <summary>
+        /// 目的文件或路径
+        /// </summary>
         public string Destination { get; set; }
 
+        /// <summary>
+        /// 目标文件
+        /// </summary>
         public string File { get; set; }
 
+        /// <summary>
+        /// 目标路径
+        /// </summary>
         public string Path { get; set; }
 
+        /// <summary>
+        /// 下载链接
+        /// </summary>
         public string Url { get; set; }
 
+        /// <summary>
+        /// 执行命令
+        /// </summary>
         public string Command { get; set; }
 
+        /// <summary>
+        /// 命令参数
+        /// </summary>
         public string Args { get; set; }
 
+        /// <summary>
+        /// 原名称
+        /// </summary>
         public string OldName { get; set; }
 
+        /// <summary>
+        /// 新名称
+        /// </summary>
         public string NewName { get; set; }
 
+        /// <summary>
+        /// 是否覆盖目标
+        /// </summary>
         public bool Overwrite { get; set; } = true;
     }
 
@@ -203,24 +242,5 @@ namespace Com.Scm.Upgrade.Config
         public string Description { get; set; }
 
         public Func<StepConfig, UpgradeResult> Execute { get; set; }
-    }
-
-    public class LaunchConfig
-    {
-        public string Command { get; set; }
-
-        public string Args { get; set; }
-    }
-
-    public class BackupConfig
-    {
-        public string Path { get; set; }
-    }
-
-    public class OfflineConfig
-    {
-        public string File { get; set; }
-
-        public int Time { get; set; }
     }
 }

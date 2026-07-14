@@ -5,8 +5,8 @@
   "installPath": "D:\\temp\\upgrade_test",
   "oldVersion": "1.0.0",
   "newVersion": "2.0.0",
-  "appInfo": "完整升级流程测试应用",
-  "verInfo": "测试所有升级操作类型及容错能力\n1、ContinueOnError：步骤失败时继续执行\n2、RetryCount/RetryDelay：失败重试机制",
+  "appInfo": "完整升级流程测试应用 - 测试所有操作类型及等待时间",
+  "verInfo": "测试所有升级操作类型及等待时间\n1、CreateDir - 创建目录\n2、CreateDoc - 创建文件\n3、CopyDoc - 复制文件\n4、CopyDir - 复制目录\n5、MoveDoc - 移动文件\n6、MoveDir - 移动目录\n7、RenameDoc - 重命名文件\n8、RenameDir - 重命名目录\n9、Zip - 压缩文件\n10、Unzip - 解压文件\n11、DeleteDoc - 删除文件\n12、DeleteDir - 删除目录\n13、Download - 下载文件\n14、Command - 执行命令\n等待时间测试：0秒、1秒、2秒、3秒",
   "steps": [
     {
       "option": 9,
@@ -15,7 +15,6 @@
       "waitTime": 0,
       "continueOnError": false,
       "retryCount": 0,
-      "retryDelay": 1000,
       "path": "D:\\temp\\upgrade_test"
     },
     {
@@ -36,7 +35,7 @@
       "option": 10,
       "name": "创建测试文件1",
       "description": "在目录A中创建文件1",
-      "waitTime": 0,
+      "waitTime": 1,
       "path": "D:\\temp\\upgrade_test\\source_a\\test_file_1.txt",
       "overwrite": true
     },
@@ -52,7 +51,7 @@
       "option": 10,
       "name": "创建测试文件3",
       "description": "在根目录创建文件3",
-      "waitTime": 0,
+      "waitTime": 2,
       "path": "D:\\temp\\upgrade_test\\test_file_3.txt",
       "overwrite": true
     },
@@ -69,7 +68,7 @@
       "option": 7,
       "name": "复制目录",
       "description": "将目录A复制到目录B下",
-      "waitTime": 0,
+      "waitTime": 1,
       "source": "D:\\temp\\upgrade_test\\source_a",
       "destination": "D:\\temp\\upgrade_test\\dest_b\\copied_a",
       "overwrite": true
@@ -93,7 +92,7 @@
       "option": 6,
       "name": "移动文件",
       "description": "将文件从to_move移动到dest_b",
-      "waitTime": 0,
+      "waitTime": 3,
       "source": "D:\\temp\\upgrade_test\\to_move\\move_me.txt",
       "destination": "D:\\temp\\upgrade_test\\dest_b\\moved_file.txt",
       "overwrite": true
@@ -108,6 +107,14 @@
       "overwrite": true
     },
     {
+      "option": 14,
+      "name": "重命名文件",
+      "description": "将test_file_3.txt重命名为renamed_file.txt",
+      "waitTime": 1,
+      "oldName": "D:\\temp\\upgrade_test\\test_file_3.txt",
+      "newName": "D:\\temp\\upgrade_test\\renamed_file.txt"
+    },
+    {
       "option": 13,
       "name": "重命名目录",
       "description": "将source_a重命名为renamed_a",
@@ -116,18 +123,10 @@
       "newName": "D:\\temp\\upgrade_test\\renamed_a"
     },
     {
-      "option": 14,
-      "name": "重命名文件",
-      "description": "将test_file_3.txt重命名为renamed_file.txt",
-      "waitTime": 0,
-      "oldName": "D:\\temp\\upgrade_test\\test_file_3.txt",
-      "newName": "D:\\temp\\upgrade_test\\renamed_file.txt"
-    },
-    {
       "option": 3,
       "name": "压缩目录",
       "description": "将renamed_a目录压缩为ZIP文件",
-      "waitTime": 0,
+      "waitTime": 2,
       "source": "D:\\temp\\upgrade_test\\renamed_a",
       "destination": "D:\\temp\\upgrade_test\\backup.zip"
     },
@@ -142,7 +141,7 @@
       "option": 4,
       "name": "解压文件",
       "description": "将backup.zip解压到extracted目录",
-      "waitTime": 0,
+      "waitTime": 1,
       "source": "D:\\temp\\upgrade_test\\backup.zip",
       "destination": "D:\\temp\\upgrade_test\\extracted",
       "overwrite": true
@@ -158,7 +157,7 @@
       "option": 11,
       "name": "删除空目录",
       "description": "删除extracted目录",
-      "waitTime": 0,
+      "waitTime": 3,
       "path": "D:\\temp\\upgrade_test\\extracted",
       "continueOnError": true
     },
@@ -176,7 +175,7 @@
       "option": 2,
       "name": "执行命令",
       "description": "执行dir命令查看测试目录结构",
-      "waitTime": 0,
+      "waitTime": 1,
       "command": "dir",
       "args": "/s",
       "path": "D:\\temp\\upgrade_test"
@@ -185,7 +184,7 @@
       "option": 2,
       "name": "执行PowerShell命令",
       "description": "执行PowerShell命令显示完成消息",
-      "waitTime": 0,
+      "waitTime": 2,
       "command": "powershell",
       "args": "-Command Write-Host '=== 所有升级操作测试完成 ==='",
       "path": "D:\\temp\\upgrade_test"
