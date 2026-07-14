@@ -2,15 +2,6 @@ using Com.Scm.Upgrade.Dvo;
 
 namespace Com.Scm.Upgrade
 {
-    public enum StepStatus
-    {
-        Pending,
-        Running,
-        Success,
-        Failed,
-        Skipped
-    }
-
     public class StepItemDvo : ScmDvo
     {
         private int stepNumber;
@@ -38,7 +29,13 @@ namespace Com.Scm.Upgrade
         public StepStatus Status
         {
             get { return status; }
-            set { status = value; OnPropertyChanged(nameof(Status)); }
+            set
+            {
+                status = value;
+                OnPropertyChanged(nameof(Status));
+                OnPropertyChanged(nameof(StatusIcon));
+                OnPropertyChanged(nameof(StatusColor));
+            }
         }
 
         private string message;

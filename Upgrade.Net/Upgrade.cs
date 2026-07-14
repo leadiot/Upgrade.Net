@@ -18,7 +18,7 @@ namespace Com.Scm.Upgrade
 
         public event Action<int, string> ProgressChanged;
 
-        public event Action<int, string, string, bool> StepStatusChanged;
+        public event Action<int, StepStatus, string, string> StepStatusChanged;
 
         public Upgrade()
         {
@@ -212,7 +212,7 @@ namespace Com.Scm.Upgrade
                 if (action == null)
                 {
                     Log(stepNumber, config.Steps.Count, $"跳过未知操作类型：{step.Option}");
-                    StepStatusChanged?.Invoke(stepNumber, "未知操作", "跳过", false);
+                    StepStatusChanged?.Invoke(stepNumber, StepStatus.Skipped, "未知操作", "跳过");
                     continue;
                 }
 
@@ -222,7 +222,7 @@ namespace Com.Scm.Upgrade
                 Log(stepNumber, config.Steps.Count, title);
                 Log($"   {description}");
 
-                StepStatusChanged?.Invoke(stepNumber, title, "执行中", false);
+                StepStatusChanged?.Invoke(stepNumber, StepStatus.Running, title, "执行中");
 
                 var result = ExecuteStepWithRetry(step, action, stepNumber);
 
@@ -230,7 +230,7 @@ namespace Com.Scm.Upgrade
                 {
                     failedSteps.Add(stepNumber);
 
-                    StepStatusChanged?.Invoke(stepNumber, title, result.Message, false);
+                    StepStatusChanged?.Invoke(stepNumber, StepStatus.Failed, title, result.Message);
 
                     if (!step.ContinueOnError)
                     {
@@ -244,8 +244,6 @@ namespace Com.Scm.Upgrade
                 {
                     Log("完成", result.Message);
 
-                    StepStatusChanged?.Invoke(stepNumber, title, result.Message, true);
-
                     if (step.WaitTime > 0)
                     {
                         Log("等待", $"开始等待 {step.WaitTime} 秒...");
@@ -256,6 +254,8 @@ namespace Com.Scm.Upgrade
                         }
                         Log("等待", $"等待结束");
                     }
+
+                    StepStatusChanged?.Invoke(stepNumber, StepStatus.Success, title, result.Message);
                 }
 
                 Log("");
@@ -963,5 +963,13 @@ namespace Com.Scm.Upgrade
         {
             Log($"   [等待] 剩余 {time} 秒...");
         }
+    }
+    public enum StepStatus
+    {
+        Pending,
+        Running,
+        Success,
+        Failed,
+        Skipped
     }
 }

@@ -182,7 +182,7 @@
                                 </ScrollViewer>
                             </Border>
                         </Grid>
-                        
+
                         <!-- 更新日志 -->
                         <Grid Grid.Row="1" Visibility="{Binding VerVisibility}" Margin="0,12,0,0">
                             <Grid.RowDefinitions>
@@ -236,7 +236,7 @@
                                         <DataTemplate>
                                             <Grid Margin="0,4,0,4">
                                                 <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="24"/>
+                                                    <ColumnDefinition Width="20"/>
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="40"/>
                                                 </Grid.ColumnDefinitions>
@@ -245,23 +245,25 @@
                                                     Text="{Binding StatusIcon}" 
                                                     FontSize="14" 
                                                     Foreground="{Binding StatusColor}"
+                                                    HorizontalAlignment="Center"
                                                     VerticalAlignment="Center"/>
-                                                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                                <StackPanel Grid.Column="1" Margin="8,0">
                                                     <TextBlock 
-                                                    Text="{Binding Title}" 
-                                                    FontSize="12" 
-                                                    FontWeight="Medium"
-                                                    Foreground="{StaticResource TextMain}"/>
+                                                        Text="{Binding Title}" 
+                                                        FontSize="12" 
+                                                        FontWeight="Medium"
+                                                        Foreground="{StaticResource TextMain}"/>
                                                     <TextBlock 
-                                                    Text="{Binding Message}" 
-                                                    FontSize="11" 
-                                                    Foreground="{Binding StatusColor}"
-                                                    Margin="0,2,0,0"/>
+                                                        Text="{Binding Message}" 
+                                                        FontSize="11" 
+                                                        Foreground="{Binding StatusColor}"
+                                                        Margin="0,2,0,0"/>
                                                 </StackPanel>
                                                 <TextBlock 
                                                     Grid.Column="2" 
                                                     Text="{Binding StepNumber}" 
                                                     FontSize="11" 
+                                                    Margin="0,0,8,0"
                                                     Foreground="{StaticResource TextSub}"
                                                     HorizontalAlignment="Right"
                                                     VerticalAlignment="Center"/>
@@ -291,12 +293,16 @@
             <Border Grid.Row="4" BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" Background="#FAFBFC" Padding="16,24"
                     CornerRadius="0,0,8,8">
                 <Grid>
-                    <StackPanel x:Name="SuccessStatus" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel x:Name="SuccessStatus" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="{Binding Notice}" Foreground="{StaticResource SuccessGreen}" 
                                    FontSize="13" FontWeight="Medium" Margin="6,0,0,0" VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button
                             x:Name="BtLater"
                             Content="稍后提醒"

@@ -87,7 +87,7 @@ namespace Com.Scm.Upgrade
             set => SetProperty(ref _steps, value);
         }
 
-        private Visibility _stepsVisibility = Visibility.Collapsed;
+        private Visibility _stepsVisibility = Visibility.Visible;
         public Visibility StepsVisibility
         {
             get => _stepsVisibility;
@@ -302,7 +302,7 @@ namespace Com.Scm.Upgrade
             });
         }
 
-        private void OnStepStatusChanged(int stepNumber, string title, string message, bool success)
+        private void OnStepStatusChanged(int stepNumber, StepStatus status, string title, string message)
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
@@ -311,12 +311,7 @@ namespace Com.Scm.Upgrade
                     var step = Steps[stepNumber - 1];
                     step.Title = title;
                     step.Message = message;
-                    step.Status = message switch
-                    {
-                        "跳过" => StepStatus.Skipped,
-                        "执行中" => StepStatus.Running,
-                        _ => success ? StepStatus.Success : StepStatus.Failed
-                    };
+                    step.Status = status;
                 }
             });
         }

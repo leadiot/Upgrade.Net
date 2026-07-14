@@ -24,7 +24,14 @@ namespace Com.Scm.Upgrade
                 };
                 upgrade.StepStatusChanged += (stepNumber, title, message, success) =>
                 {
-                    var status = success ? "[完成]" : (message == "跳过" ? "[跳过]" : "[失败]");
+                    var status = success switch
+                    {
+                        StepStatus.Skipped => "[跳过]",
+                        StepStatus.Running => "[执行中]",
+                        StepStatus.Success => "[完成]",
+                        StepStatus.Failed => "失败",
+                        _ => "其它"
+                    };
                     Console.WriteLine($"   {status} {message}");
                 };
 
