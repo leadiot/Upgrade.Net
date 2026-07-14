@@ -12,7 +12,7 @@
     {
       "option": 1,
       "title": "",
-      "desc": "",
+      "description": "",
       "waitTime": 1,
       "path": "",
       "source": ""
@@ -20,7 +20,7 @@
     {
       "option": 1,
       "title": "",
-      "desc": "",
+      "description": "",
       "waitTime": 1,
       "source": "",
       "dest": ""
@@ -28,7 +28,7 @@
     {
       "option": 1,
       "title": "",
-      "desc": "",
+      "description": "",
       "waitTime": 1,
       "url": "",
       "file": ""
@@ -36,7 +36,7 @@
     {
       "option": 1,
       "title": "",
-      "desc": "",
+      "description": "",
       "waitTime": 1,
       "Command": "",
       "Args": ""

@@ -6,41 +6,100 @@ namespace Com.Scm.Upgrade.Config
     {
         public const string CONFIG_FILE = "upgrade.json";
 
+        /// <summary>
+        /// 应用图标，用于升级程序显示
+        /// 默认：无
+        /// 选项：可选
+        /// </summary>
         public string Icon { get; set; }
 
+        /// <summary>
+        /// 升级程序显示标题
+        /// 默认：Upgrade.Wpf更新
+        /// 选项：可选
+        /// </summary>
         public string Title { get; set; }
 
+        /// <summary>
+        /// 升级程序是否自动执行更新
+        /// 默认：false
+        /// 选项：可选
+        /// </summary>
         public bool AutoStart { get; set; }
 
+        /// <summary>
+        /// 升级程序是否在升级完成后自动退出
+        /// 默认：false
+        /// 选项：可选
+        /// </summary>
         public bool AutoClose { get; set; }
 
+        /// <summary>
+        /// 是否展示升级步骤列表
+        /// 默认：false
+        /// 选项：可选
+        /// </summary>
         public bool ShowSteps { get; set; }
 
+        /// <summary>
+        /// 待升级程序安装路径
+        /// 默认：当前所在目录
+        /// 选项：可选
+        /// </summary>
         public string InstallPath { get; set; }
 
-        public InstallType InstallType { get; set; }
+        /// <summary>
+        /// 升级过程中需要忽略的文件列表（如配置文件、数据库等）
+        /// 默认：null
+        /// 选项：可选
+        /// </summary>
+        public List<string> IgnoreFiles { get; set; }
 
-        public string InstallFile { get; set; }
+        /// <summary>
+        /// 应用信息配置，用于应用信息的展示
+        /// 默认：null
+        /// 选项：可选
+        /// </summary>
+        public string AppInfo { get; set; }
 
-        public string DownloadUrl { get; set; }
+        /// <summary>
+        /// 版本信息配置，用于版本信息的展示
+        /// 默认：null
+        /// 选项：可选
+        /// </summary>
+        public string VerInfo { get; set; }
 
-        public OfflineConfig Offline { get; set; }
+        /// <summary>
+        /// 现有版本，用于升级界面展示
+        /// 默认：null，
+        /// 选项：可选
+        /// </summary>
+        public string OldVersion { get; set; }
+        /// <summary>
+        /// 目标版本，用于升级界面展示
+        /// 默认：null，
+        /// 选项：可选
+        /// </summary>
+        public string NewVersion { get; set; }
 
-        public BackupConfig Backup { get; set; }
+        /// <summary>
+        /// 升级步骤，系统按此步骤执行升级过程
+        /// 默认：null
+        /// 选项：必选
+        /// </summary>
+        public List<StepConfig> Steps { get; set; }
+
+        public string Url { get; set; }
+
+        public bool AutoBackup { get; set; }
+
+        public string BackupPath { get; set; }
 
         public LaunchConfig Launch { get; set; }
 
-        public List<string> IgnoreFiles { get; set; }
+        public BackupConfig Backup { get; set; }
 
-        public string AppInfo { get; set; }
-
-        public string VerInfo { get; set; }
-
-        public string OldVersion { get; set; }
-
-        public string NewVersion { get; set; }
-
-        public List<StepConfig> Steps { get; set; }
+        public OfflineConfig Offline { get; set; }
 
         public void LoadDefault()
         {
@@ -74,7 +133,7 @@ namespace Com.Scm.Upgrade.Config
 
     public class StepConfig
     {
-        public string Name { get; set; }
+        public string Title { get; set; }
 
         public string Description { get; set; }
 
@@ -82,15 +141,21 @@ namespace Com.Scm.Upgrade.Config
 
         public int WaitTime { get; set; }
 
+        public bool ContinueOnError { get; set; }
+
+        public int RetryCount { get; set; }
+
+        public int RetryDelay { get; set; } = 1000;
+
         public string Source { get; set; }
 
         public string Destination { get; set; }
 
+        public string File { get; set; }
+
         public string Path { get; set; }
 
         public string Url { get; set; }
-
-        public string File { get; set; }
 
         public string Command { get; set; }
 
@@ -101,15 +166,6 @@ namespace Com.Scm.Upgrade.Config
         public string NewName { get; set; }
 
         public bool Overwrite { get; set; } = true;
-
-        public UpgradeAction Action { get; set; }
-    }
-
-    public class UpgradePlan
-    {
-        public string Name { get; set; }
-
-        public List<StepConfig> Steps { get; set; }
     }
 
     public class UpgradeResult
@@ -117,13 +173,6 @@ namespace Com.Scm.Upgrade.Config
         public bool Success { get; set; }
 
         public string Message { get; set; }
-    }
-
-    public class UpgradeReport
-    {
-        public UpgradeResult Result { get; set; }
-
-        public List<StepConfig> Steps { get; set; }
     }
 
     public enum UpgradeOption
@@ -173,12 +222,5 @@ namespace Com.Scm.Upgrade.Config
         public string File { get; set; }
 
         public int Time { get; set; }
-    }
-
-    public enum InstallType
-    {
-        Auto,
-        FromZip,
-        FromUrl
     }
 }

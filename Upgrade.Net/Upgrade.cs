@@ -175,7 +175,17 @@ namespace Com.Scm.Upgrade
                 }
                 else
                 {
-                    ExecuteDefaultUpgrade(config);
+                    var legacySteps = BuildLegacySteps(config);
+                    if (legacySteps.Count > 0)
+                    {
+                        config.Steps = legacySteps;
+                        Log("[信息] 使用传统配置模式，自动构建升级步骤");
+                        ExecuteSteps(config);
+                    }
+                    else
+                    {
+                        Log("[警告] 未配置升级步骤，请在 upgrade.json 中配置 Steps");
+                    }
                 }
 
                 Log("");
@@ -199,6 +209,8 @@ namespace Com.Scm.Upgrade
             Log($"[步骤] 开始执行 {config.Steps.Count} 个升级步骤...");
             Log("");
 
+            var failedSteps = new List<int>();
+
             for (int i = 0; i < config.Steps.Count; i++)
             {
                 var step = config.Steps[i];
@@ -211,25 +223,29 @@ namespace Com.Scm.Upgrade
                     continue;
                 }
 
-                var title = string.IsNullOrEmpty(step.Name) ? action.Title : step.Name;
+                var title = string.IsNullOrEmpty(step.Title) ? action.Title : step.Title;
                 var description = string.IsNullOrEmpty(step.Description) ? action.Description : step.Description;
 
                 Log($"[步骤{stepNumber}/{config.Steps.Count}] {title}");
                 Log($"   {description}");
 
-                try
-                {
-                    var result = action.Execute(step);
+                var result = ExecuteStepWithRetry(step, action, stepNumber);
 
-                    if (result.Success)
+                if (!result.Success)
+                {
+                    failedSteps.Add(stepNumber);
+
+                    if (!step.ContinueOnError)
                     {
-                        Log($"   [完成] {result.Message}");
-                    }
-                    else
-                    {
-                        Log($"   [失败] {result.Message}");
+                        Log($"   [终止] 步骤失败且不允许继续，终止升级流程");
                         throw new Exception($"步骤 {stepNumber} 执行失败：{result.Message}");
                     }
+
+                    Log($"   [继续] 步骤失败但允许继续，继续执行后续步骤");
+                }
+                else
+                {
+                    Log($"   [完成] {result.Message}");
 
                     if (step.WaitTime > 0)
                     {
@@ -237,22 +253,214 @@ namespace Com.Scm.Upgrade
                         Thread.Sleep(step.WaitTime * 1000);
                     }
                 }
-                catch (Exception ex)
-                {
-                    Log($"   [错误] {ex.Message}");
-                    throw;
-                }
 
                 Log("");
             }
 
-            Log("[步骤] 所有升级步骤执行完成");
+            if (failedSteps.Count > 0)
+            {
+                Log($"[步骤] 升级完成，{failedSteps.Count} 个步骤失败：{string.Join(", ", failedSteps)}");
+            }
+            else
+            {
+                Log("[步骤] 所有升级步骤执行完成");
+            }
+        }
+
+        private UpgradeResult ExecuteStepWithRetry(StepConfig step, UpgradeAction action, int stepNumber)
+        {
+            var maxRetry = step.RetryCount;
+            var retryDelay = step.RetryDelay;
+            var attempt = 0;
+
+            while (attempt <= maxRetry)
+            {
+                attempt++;
+
+                try
+                {
+                    return action.Execute(step);
+                }
+                catch (Exception ex)
+                {
+                    Log($"   [重试] 第 {attempt} 次尝试失败：{ex.Message}");
+
+                    if (attempt <= maxRetry)
+                    {
+                        Log($"   [重试] 等待 {retryDelay} 毫秒后重试...");
+                        Thread.Sleep(retryDelay);
+                    }
+                    else
+                    {
+                        return new UpgradeResult { Success = false, Message = $"经过 {maxRetry + 1} 次尝试后仍失败：{ex.Message}" };
+                    }
+                }
+            }
+
+            return new UpgradeResult { Success = false, Message = "执行失败" };
         }
 
         private UpgradeAction GetAction(UpgradeOption option)
         {
             _actions.TryGetValue(option, out var action);
             return action;
+        }
+
+        private List<StepConfig> BuildLegacySteps(UpgradeConfig config)
+        {
+            var steps = new List<StepConfig>();
+
+            if (!string.IsNullOrEmpty(config.Url))
+            {
+                var installPath = string.IsNullOrEmpty(config.InstallPath) 
+                    ? AppDomain.CurrentDomain.BaseDirectory 
+                    : config.InstallPath;
+
+                var downloadFile = Path.Combine(installPath, "update.zip");
+
+                steps.Add(new StepConfig
+                {
+                    Option = UpgradeOption.Download,
+                    Title = "下载更新包",
+                    Description = "从远程服务器下载更新包",
+                    WaitTime = 0,
+                    Url = config.Url,
+                    File = downloadFile
+                });
+
+                if ((config.AutoBackup || config.Backup != null) && 
+                    (!string.IsNullOrEmpty(config.BackupPath) || (config.Backup != null && !string.IsNullOrEmpty(config.Backup.Path))))
+                {
+                    var backupPath = !string.IsNullOrEmpty(config.BackupPath) 
+                        ? config.BackupPath 
+                        : (config.Backup?.Path ?? installPath);
+
+                    var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+                    var backupFile = Path.Combine(backupPath, $"backup_{timestamp}.zip");
+
+                    steps.Add(new StepConfig
+                    {
+                        Option = UpgradeOption.Zip,
+                        Title = "备份现有文件",
+                        Description = "备份当前版本文件",
+                        WaitTime = 0,
+                        Source = installPath,
+                        Destination = backupFile
+                    });
+                }
+
+                steps.Add(new StepConfig
+                {
+                    Option = UpgradeOption.Unzip,
+                    Title = "解压更新包",
+                    Description = "将更新包解压到安装目录",
+                    WaitTime = 0,
+                    Source = downloadFile,
+                    Destination = installPath,
+                    Overwrite = true
+                });
+
+                if (config.Launch != null && !string.IsNullOrEmpty(config.Launch.Command))
+                {
+                    steps.Add(new StepConfig
+                    {
+                        Option = UpgradeOption.Command,
+                        Title = "启动应用程序",
+                        Description = "启动升级后的应用程序",
+                        WaitTime = 0,
+                        Command = config.Launch.Command,
+                        Args = config.Launch.Args,
+                        Path = installPath
+                    });
+                }
+
+                steps.Add(new StepConfig
+                {
+                    Option = UpgradeOption.DeleteDoc,
+                    Title = "清理临时文件",
+                    Description = "删除下载的更新包",
+                    WaitTime = 0,
+                    Path = downloadFile,
+                    ContinueOnError = true
+                });
+            }
+            else if (config.Offline != null && !string.IsNullOrEmpty(config.Offline.File))
+            {
+                var installPath = string.IsNullOrEmpty(config.InstallPath)
+                    ? AppDomain.CurrentDomain.BaseDirectory
+                    : config.InstallPath;
+
+                var offlineFile = config.Offline.File;
+                var destFile = Path.Combine(installPath, Path.GetFileName(offlineFile));
+
+                steps.Add(new StepConfig
+                {
+                    Option = UpgradeOption.CopyDoc,
+                    Title = "复制离线升级文件",
+                    Description = "将离线升级文件复制到安装目录",
+                    WaitTime = 0,
+                    Source = offlineFile,
+                    Destination = destFile,
+                    Overwrite = true
+                });
+
+                if (config.Offline.Time > 0)
+                {
+                    for (int i = config.Offline.Time; i > 0; i--)
+                    {
+                        Log($"   [等待] 倒计时：{i} 秒");
+                        Thread.Sleep(1000);
+                    }
+                }
+
+                if ((config.AutoBackup || config.Backup != null) &&
+                    (!string.IsNullOrEmpty(config.BackupPath) || (config.Backup != null && !string.IsNullOrEmpty(config.Backup.Path))))
+                {
+                    var backupPath = !string.IsNullOrEmpty(config.BackupPath)
+                        ? config.BackupPath
+                        : (config.Backup?.Path ?? installPath);
+
+                    var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+                    var backupFile = Path.Combine(backupPath, $"backup_{timestamp}.zip");
+
+                    steps.Add(new StepConfig
+                    {
+                        Option = UpgradeOption.Zip,
+                        Title = "备份现有文件",
+                        Description = "备份当前版本文件",
+                        WaitTime = 0,
+                        Source = installPath,
+                        Destination = backupFile
+                    });
+                }
+
+                steps.Add(new StepConfig
+                {
+                    Option = UpgradeOption.Unzip,
+                    Title = "解压更新包",
+                    Description = "将更新包解压到安装目录",
+                    WaitTime = 0,
+                    Source = destFile,
+                    Destination = installPath,
+                    Overwrite = true
+                });
+
+                if (config.Launch != null && !string.IsNullOrEmpty(config.Launch.Command))
+                {
+                    steps.Add(new StepConfig
+                    {
+                        Option = UpgradeOption.Command,
+                        Title = "启动应用程序",
+                        Description = "启动升级后的应用程序",
+                        WaitTime = 0,
+                        Command = config.Launch.Command,
+                        Args = config.Launch.Args,
+                        Path = installPath
+                    });
+                }
+            }
+
+            return steps;
         }
 
         private UpgradeResult ExecuteDownload(StepConfig step)
@@ -841,149 +1049,6 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private void ExecuteDefaultUpgrade(UpgradeConfig config)
-        {
-            Log("[步骤1/7] 准备安装目录...");
-
-            if (string.IsNullOrEmpty(config.InstallPath))
-            {
-                config.InstallPath = AppDomain.CurrentDomain.BaseDirectory;
-            }
-
-            if (!Directory.Exists(config.InstallPath))
-            {
-                Directory.CreateDirectory(config.InstallPath);
-                Log($"   [创建] 安装目录：{config.InstallPath}");
-            }
-            Log("   [完成] 安装目录准备完成");
-
-            Log("[步骤2/7] 获取安装文件...");
-            string zipFile = null;
-            bool isDownloaded = false;
-
-            if (config.InstallType == InstallType.FromZip)
-            {
-                zipFile = config.InstallFile;
-                if (!File.Exists(zipFile))
-                {
-                    Log($"   [错误] 指定的本地安装文件不存在：{zipFile}，结束升级任务");
-                    ExitApplication();
-                    return;
-                }
-                Log($"   [使用] 本地压缩包：{Path.GetFileName(zipFile)}");
-            }
-            else if (config.InstallType == InstallType.FromUrl)
-            {
-                if (string.IsNullOrWhiteSpace(config.DownloadUrl))
-                {
-                    Log($"   [错误] 远程下载地址为空，结束升级任务");
-                    ExitApplication();
-                    return;
-                }
-                Log("   [下载] 从远程服务器下载更新包...");
-                zipFile = DownloadFile(config.DownloadUrl);
-                isDownloaded = true;
-                Log("   [完成] 文件下载完成");
-            }
-            else
-            {
-                zipFile = config.InstallFile;
-                if (File.Exists(zipFile))
-                {
-                    Log($"   [使用] 本地压缩包：{Path.GetFileName(zipFile)}");
-                }
-                else
-                {
-                    if (string.IsNullOrWhiteSpace(config.DownloadUrl))
-                    {
-                        Log($"   [错误] 远程下载地址为空，结束升级任务");
-                        ExitApplication();
-                        return;
-                    }
-                    Log("   [切换] 本地文件不存在，转为远程下载...");
-                    zipFile = DownloadFile(config.DownloadUrl);
-                    isDownloaded = true;
-                    Log("   [完成] 文件下载完成");
-                }
-            }
-
-            string offlineFile = CopyOffline(config.InstallPath, config.Offline);
-
-            Log("[步骤4/7] 备份现有文件...");
-            var backupResult = BackupFiles(config.InstallPath, config.Backup);
-            if (backupResult.Success)
-            {
-                Log($"   [完成] 备份完成：{Path.GetFileName(backupResult.BackupPath)}");
-                if (backupResult.SkippedCount > 0)
-                    Log($"   [信息] 已备份 {backupResult.ProcessedCount} 个文件，跳过 {backupResult.SkippedCount} 个锁定文件");
-            }
-            else
-            {
-                Log($"   [跳过] 备份未启用或失败，继续升级");
-            }
-
-            Log("[步骤5/7] 解压文件到安装目录...");
-            var extractResult = ExtractFiles(config.InstallPath, zipFile, config.IgnoreFiles);
-            Log($"   [完成] 文件解压完成");
-            if (extractResult.SkippedCount > 0)
-            {
-                Log($"   [信息] 已解压 {extractResult.ProcessedCount} 个文件，忽略 {extractResult.SkippedCount} 个文件");
-                foreach (var skippedFile in extractResult.SkippedFiles)
-                {
-                    Log($"         +-- {skippedFile}");
-                }
-            }
-
-            DeleteOffline(offlineFile);
-
-            Log("[步骤6/7] 清理临时文件...");
-            if (isDownloaded)
-            {
-                CleanupFile(zipFile);
-                Log("   [完成] 下载文件已清理");
-            }
-            else
-            {
-                Log("   [跳过] 使用本地文件，保留原文件");
-            }
-
-            Log("[步骤7/7] 启动应用程序...");
-            LaunchApplication(config.InstallPath, config.Launch);
-        }
-
-        private string DownloadFile(string url)
-        {
-            var tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".zip");
-
-            var response = _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult();
-            response.EnsureSuccessStatusCode();
-
-            var totalBytes = response.Content.Headers.ContentLength ?? -1;
-            using (var stream = response.Content.ReadAsStreamAsync().GetAwaiter().GetResult())
-            using (var fileStream = File.Create(tempFilePath))
-            {
-                var buffer = new byte[81920];
-                long totalRead = 0;
-                int bytesRead;
-                while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
-                {
-                    fileStream.Write(buffer, 0, bytesRead);
-                    totalRead += bytesRead;
-                    if (totalBytes > 0)
-                    {
-                        var progress = (int)((totalRead * 100) / totalBytes);
-                        Console.Write($"\r   [下载] 进度：{progress}% ({FormatFileSize(totalRead)} / {FormatFileSize(totalBytes)})");
-                    }
-                    else
-                    {
-                        Console.Write($"\r   [下载] 进度：{FormatFileSize(totalRead)}");
-                    }
-                }
-                Console.WriteLine();
-            }
-            return tempFilePath;
-        }
-
         private string FormatFileSize(long size)
         {
             var units = new string[] { "B", "KB", "MB", "GB", "TB", "PB" };
@@ -994,217 +1059,6 @@ namespace Com.Scm.Upgrade
                 i++;
             }
             return size + units[i];
-        }
-
-        private ExtractResult ExtractFiles(string installPath, string zipPath, List<string> ignoreFiles = null)
-        {
-            var result = new ExtractResult { ProcessedCount = 0, SkippedCount = 0, SkippedFiles = new List<string>() };
-
-            using (var archive = ZipFile.OpenRead(zipPath))
-            {
-                var entries = archive.Entries.ToList();
-                var totalEntries = entries.Count;
-
-                if (totalEntries == 0)
-                {
-                    Log("   [警告] 压缩包为空，跳过解压步骤");
-                    return result;
-                }
-
-                Log($"   [解压] 准备解压 {totalEntries} 个文件...");
-
-                foreach (var entry in entries)
-                {
-                    var path = Path.Combine(installPath, entry.FullName);
-                    if (path.EndsWith("/"))
-                    {
-                        Directory.CreateDirectory(path);
-                        result.ProcessedCount++;
-                        continue;
-                    }
-
-                    bool shouldIgnore = false;
-                    if (ignoreFiles != null && ignoreFiles.Any(ignore => path.Contains(ignore, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        if (File.Exists(path))
-                        {
-                            result.SkippedCount++;
-                            result.SkippedFiles.Add(path);
-                            shouldIgnore = true;
-                        }
-                    }
-
-                    if (!shouldIgnore)
-                    {
-                        Directory.CreateDirectory(Path.GetDirectoryName(path));
-                        entry.ExtractToFile(path, true);
-                    }
-
-                    result.ProcessedCount++;
-
-                    var progress = (int)((result.ProcessedCount * 100) / totalEntries);
-                    Console.Write($"\r   [解压] 进度：{result.ProcessedCount}/{totalEntries} ({progress}%){(result.SkippedCount > 0 ? $"，忽略 {result.SkippedCount} 个" : "")}");
-                }
-            }
-
-            Console.WriteLine();
-            return result;
-        }
-
-        private void CleanupFile(string tempFilePath)
-        {
-            if (File.Exists(tempFilePath))
-            {
-                File.Delete(tempFilePath);
-            }
-        }
-
-        private BackupResult BackupFiles(string installPath, BackupConfig config)
-        {
-            var result = new BackupResult { Success = false, ProcessedCount = 0, SkippedCount = 0 };
-
-            if (config == null || string.IsNullOrEmpty(config.Path))
-            {
-                Log("   [跳过] 未配置备份路径，跳过备份");
-                return result;
-            }
-
-            if (!Directory.Exists(installPath))
-            {
-                Log("   [跳过] 安装目录不存在，跳过备份");
-                return result;
-            }
-
-            try
-            {
-                Directory.CreateDirectory(config.Path);
-                var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-                var backupFileName = $"backup_{timestamp}.zip";
-                var backupFilePath = Path.Combine(config.Path, backupFileName);
-
-                var allFiles = Directory.GetFiles(installPath, "*", SearchOption.AllDirectories);
-                var totalFiles = allFiles.Length;
-
-                if (totalFiles == 0)
-                {
-                    Log("   [跳过] 安装目录为空，跳过备份");
-                    return result;
-                }
-
-                Log($"   [备份] 准备备份 {totalFiles} 个文件...");
-
-                using (var zipStream = File.Create(backupFilePath))
-                using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
-                {
-                    foreach (var filePath in allFiles)
-                    {
-                        var relativePath = Path.GetRelativePath(installPath, filePath);
-
-                        try
-                        {
-                            archive.CreateEntryFromFile(filePath, relativePath, CompressionLevel.Optimal);
-                            result.ProcessedCount++;
-                        }
-                        catch (IOException)
-                        {
-                            result.SkippedCount++;
-                        }
-
-                        var progress = (int)((result.ProcessedCount + result.SkippedCount) * 100 / totalFiles);
-                        Console.Write($"\r   [备份] 进度：{result.ProcessedCount + result.SkippedCount}/{totalFiles} ({progress}%){(result.SkippedCount > 0 ? $"，跳过 {result.SkippedCount} 个" : "")}");
-                    }
-                }
-
-                Console.WriteLine();
-                result.Success = true;
-                result.BackupPath = backupFilePath;
-            }
-            catch (Exception ex)
-            {
-                Log($"   [错误] 备份失败：{ex.Message}");
-            }
-
-            return result;
-        }
-
-        private void LaunchApplication(string installPath, LaunchConfig config)
-        {
-            if (config == null)
-            {
-                Log("   [跳过] 未配置启动程序，跳过启动步骤");
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(config.Command))
-            {
-                Log("   [跳过] 未配置启动命令，跳过启动步骤");
-                return;
-            }
-
-            Log($"   [执行] 命令：{config.Command} {config.Args ?? ""}");
-
-            try
-            {
-                var parts = ParseCommand(config.Command);
-                var exePath = parts.Item1;
-                var exeArgs = parts.Item2;
-
-                var processStartInfo = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = exePath,
-                    Arguments = $"{exeArgs} {config.Args ?? string.Empty}".Trim(),
-                    WorkingDirectory = installPath,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                };
-
-                using (var process = System.Diagnostics.Process.Start(processStartInfo))
-                {
-                    if (process != null)
-                    {
-                        Log($"   [信息] 进程已启动，PID：{process.Id}");
-
-                        var output = process.StandardOutput.ReadToEnd();
-                        var error = process.StandardError.ReadToEnd();
-                        var exited = process.WaitForExit(5000);
-
-                        if (!string.IsNullOrEmpty(output))
-                        {
-                            Log($"   [输出] 命令输出：{output.Trim().Substring(0, Math.Min(200, output.Length))}");
-                        }
-                        if (!string.IsNullOrEmpty(error))
-                        {
-                            Log($"   [警告] 命令错误：{error.Trim().Substring(0, Math.Min(200, error.Length))}");
-                        }
-
-                        if (exited)
-                        {
-                            if (process.ExitCode == 0)
-                            {
-                                Log($"   [完成] 命令执行成功，退出码：{process.ExitCode}");
-                            }
-                            else
-                            {
-                                Log($"   [错误] 命令执行失败，退出码：{process.ExitCode}");
-                            }
-                        }
-                        else
-                        {
-                            Log($"   [信息] 命令进程在 5 秒内未退出，视为后台运行");
-                        }
-                    }
-                    else
-                    {
-                        Log($"   [错误] 进程启动失败");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log("   [错误] 命令执行异常：" + ex.Message);
-            }
         }
 
         private Tuple<string, string> ParseCommand(string command)
@@ -1238,63 +1092,14 @@ namespace Com.Scm.Upgrade
             return Tuple.Create(command, string.Empty);
         }
 
-        private string CopyOffline(string installPath, OfflineConfig config)
-        {
-            if (config == null)
-            {
-                return null;
-            }
-
-            var file = config.File;
-            if (string.IsNullOrEmpty(file) || !File.Exists(file))
-            {
-                return null;
-            }
-
-            Log("[步骤3/7] 复制离线升级文件...");
-            var name = Path.GetFileName(file);
-            var dstFile = Path.Combine(installPath, name);
-            File.Copy(file, dstFile, true);
-
-            Log("   [完成] 离线文件复制完成");
-
-            var seconds = config.Time;
-            if (seconds > 0)
-            {
-                Log($"   [等待] 等待 {seconds} 秒后执行升级...");
-                for (int i = seconds; i > 0; i--)
-                {
-                    Log($"   [等待] 倒计时：{i} 秒");
-                    Thread.Sleep(1000);
-                }
-            }
-            Log("   [开始] 开始执行升级任务");
-
-            return dstFile;
-        }
-
-        private void DeleteOffline(string file)
-        {
-            if (!string.IsNullOrEmpty(file) && File.Exists(file))
-            {
-                try
-                {
-                    File.Delete(file);
-                    Log($"   [完成] 删除离线文件：{Path.GetFileName(file)}");
-                }
-                catch (Exception ex)
-                {
-                    Log($"   [警告] 删除离线文件失败：{ex.Message}");
-                }
-            }
-        }
-
         private void CloseApplication(bool autoClose)
         {
             if (autoClose)
             {
                 Log("");
                 Log("   [信息] 升级程序即将退出...");
+                Thread.Sleep(3000);
+                Environment.Exit(0);
                 return;
             }
 
@@ -1311,21 +1116,6 @@ namespace Com.Scm.Upgrade
         private void Log(string message)
         {
             Console.WriteLine(message);
-        }
-
-        private class ExtractResult
-        {
-            public int ProcessedCount { get; set; }
-            public int SkippedCount { get; set; }
-            public List<string> SkippedFiles { get; set; } = new List<string>();
-        }
-
-        private class BackupResult
-        {
-            public bool Success { get; set; }
-            public string BackupPath { get; set; }
-            public int ProcessedCount { get; set; }
-            public int SkippedCount { get; set; }
         }
     }
 }
