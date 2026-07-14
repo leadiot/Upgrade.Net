@@ -221,7 +221,6 @@ namespace Com.Scm.Upgrade
             var result = new ExtractResult { ProcessedCount = 0, SkippedCount = 0, SkippedFiles = new List<string>() };
 
             var fileName = Path.GetFileNameWithoutExtension(zipPath);
-            fileName += "/";
 
             using (var archive = ZipFile.OpenRead(zipPath))
             {
@@ -238,33 +237,32 @@ namespace Com.Scm.Upgrade
 
                 foreach (var entry in entries)
                 {
-                    if (entry.FullName.EndsWith("/"))
+                    var path = TrimStart(entry.FullName, fileName);
+                    if (path.EndsWith("/"))
                     {
-                        var dirPath = Path.Combine(installPath, entry.FullName);
+                        var dirPath = Path.Combine(installPath, path);
                         Directory.CreateDirectory(dirPath);
                         result.ProcessedCount++;
                         continue;
                     }
 
-                    var fullName = TrimStart(entry.FullName, fileName);
-                    var destPath = Path.Combine(installPath, fullName);
-                    var relativePath = fullName;
+                    var docPath = Path.Combine(installPath, path);
 
                     bool shouldIgnore = false;
-                    if (ignoreFiles != null && ignoreFiles.Any(ignore => relativePath.Contains(ignore, StringComparison.OrdinalIgnoreCase)))
+                    if (ignoreFiles != null && ignoreFiles.Any(ignore => docPath.Contains(ignore, StringComparison.OrdinalIgnoreCase)))
                     {
-                        if (File.Exists(destPath))
+                        if (File.Exists(docPath))
                         {
                             result.SkippedCount++;
-                            result.SkippedFiles.Add(relativePath);
+                            result.SkippedFiles.Add(docPath);
                             shouldIgnore = true;
                         }
                     }
 
                     if (!shouldIgnore)
                     {
-                        Directory.CreateDirectory(Path.GetDirectoryName(destPath));
-                        entry.ExtractToFile(destPath, true);
+                        Directory.CreateDirectory(Path.GetDirectoryName(docPath));
+                        entry.ExtractToFile(docPath, true);
                     }
 
                     result.ProcessedCount++;
