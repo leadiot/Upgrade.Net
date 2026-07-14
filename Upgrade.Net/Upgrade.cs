@@ -1,5 +1,6 @@
 using Com.Scm.Upgrade.Config;
 using System.IO.Compression;
+using System.Net.Http;
 
 namespace Com.Scm.Upgrade
 {
@@ -13,6 +14,12 @@ namespace Com.Scm.Upgrade
 
         private static readonly HttpClient _HttpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
         private readonly Dictionary<UpgradeOption, UpgradeAction> _Actions = new Dictionary<UpgradeOption, UpgradeAction>();
+
+        public event Action<string> LogMessage;
+
+        public event Action<int, string> ProgressChanged;
+
+        public event Action<int, string, string, bool> StepStatusChanged;
 
         public Upgrade()
         {
@@ -134,7 +141,7 @@ namespace Com.Scm.Upgrade
             };
         }
 
-        public void Start()
+        public void Start(UpgradeConfig config)
         {
             Log("═══════════════════════════════════════════════");
             Log($"            Upgrade.Net v{MAJOR}.{MINOR}.{PATCH}.{BUILD}");
@@ -143,11 +150,9 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                var config = UpgradeConfig.Load();
                 if (config == null)
                 {
-                    Log("[错误] 配置文件 upgrade.json 不存在，结束升级任务");
-                    ExitApplication();
+                    Log("[错误] 配置对象为空，结束升级任务");
                     return;
                 }
 
@@ -182,15 +187,13 @@ namespace Com.Scm.Upgrade
                 Log("═══════════════════════════════════════════════");
                 Log("            升级任务完成");
                 Log("═══════════════════════════════════════════════");
-
-                CloseApplication(config.AutoClose);
             }
             catch (Exception ex)
             {
                 Log($"");
                 Log($"[错误] 更新失败：{ex.Message}");
                 Log(ex.StackTrace);
-                ExitApplication();
+                throw;
             }
         }
 
@@ -210,6 +213,7 @@ namespace Com.Scm.Upgrade
                 if (action == null)
                 {
                     Log($"[步骤{stepNumber}/{config.Steps.Count}] [跳过] 未知操作类型：{step.Option}");
+                    StepStatusChanged?.Invoke(stepNumber, "未知操作", "跳过", false);
                     continue;
                 }
 
@@ -219,11 +223,15 @@ namespace Com.Scm.Upgrade
                 Log($"[步骤{stepNumber}/{config.Steps.Count}] {title}");
                 Log($"   {description}");
 
+                StepStatusChanged?.Invoke(stepNumber, title, "执行中", false);
+
                 var result = ExecuteStepWithRetry(step, action, stepNumber);
 
                 if (!result.Success)
                 {
                     failedSteps.Add(stepNumber);
+
+                    StepStatusChanged?.Invoke(stepNumber, title, result.Message, false);
 
                     if (!step.ContinueOnError)
                     {
@@ -236,6 +244,8 @@ namespace Com.Scm.Upgrade
                 else
                 {
                     Log($"   [完成] {result.Message}");
+
+                    StepStatusChanged?.Invoke(stepNumber, title, result.Message, true);
 
                     if (step.WaitTime > 0)
                     {
@@ -333,14 +343,9 @@ namespace Com.Scm.Upgrade
                         if (totalBytes > 0)
                         {
                             var progress = (int)((totalRead * 100) / totalBytes);
-                            Console.Write($"\r   [下载] 进度：{progress}% ({FormatFileSize(totalRead)} / {FormatFileSize(totalBytes)})");
-                        }
-                        else
-                        {
-                            Console.Write($"\r   [下载] 进度：{FormatFileSize(totalRead)}");
+                            ProgressChanged?.Invoke(progress, $"下载进度：{progress}%");
                         }
                     }
-                    Console.WriteLine();
                 }
 
                 step.File = destPath;
@@ -455,10 +460,9 @@ namespace Com.Scm.Upgrade
                             archive.CreateEntryFromFile(filePath, relativePath, CompressionLevel.Optimal);
 
                             var progress = (int)((i + 1) * 100 / totalFiles);
-                            Console.Write($"\r   [压缩] 进度：{i + 1}/{totalFiles} ({progress}%)");
+                            ProgressChanged?.Invoke(progress, $"压缩进度：{i + 1}/{totalFiles}");
                         }
                     }
-                    Console.WriteLine();
 
                     return new UpgradeResult { Success = true, Message = $"目录压缩完成，共 {totalFiles} 个文件，大小：{FormatFileSize(new FileInfo(destPath).Length)}" };
                 }
@@ -539,9 +543,8 @@ namespace Com.Scm.Upgrade
                         entry.ExtractToFile(path, step.Overwrite);
 
                         var progress = (int)((i + 1) * 100 / totalEntries);
-                        Console.Write($"\r   [解压] 进度：{i + 1}/{totalEntries} ({progress}%)");
+                        ProgressChanged?.Invoke(progress, $"解压进度：{i + 1}/{totalEntries}");
                     }
-                    Console.WriteLine();
                 }
 
                 return new UpgradeResult { Success = true, Message = $"解压完成，共 {totalEntries} 个文件" };
@@ -942,30 +945,9 @@ namespace Com.Scm.Upgrade
             return Tuple.Create(command, string.Empty);
         }
 
-        private void CloseApplication(bool autoClose)
-        {
-            if (autoClose)
-            {
-                Log("");
-                Log("   [信息] 升级程序即将退出...");
-                Thread.Sleep(3000);
-                Environment.Exit(0);
-                return;
-            }
-
-            ExitApplication();
-        }
-
-        private void ExitApplication()
-        {
-            Log("");
-            Log("[信息] 升级程序已结束，按任意键退出...");
-            Console.ReadKey();
-        }
-
         private void Log(string message)
         {
-            Console.WriteLine(message);
+            LogMessage?.Invoke(message);
         }
     }
 }

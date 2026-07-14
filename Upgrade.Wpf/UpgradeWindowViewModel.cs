@@ -208,7 +208,7 @@ namespace Com.Scm.Upgrade
             {
                 try
                 {
-                    _upgrade.Start();
+                    _upgrade.Start(_config);
 
                     if (!_config.AutoClose)
                     {
