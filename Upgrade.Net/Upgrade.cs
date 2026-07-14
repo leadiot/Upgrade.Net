@@ -220,8 +220,6 @@ namespace Com.Scm.Upgrade
         {
             var result = new ExtractResult { ProcessedCount = 0, SkippedCount = 0, SkippedFiles = new List<string>() };
 
-            var fileName = Path.GetFileNameWithoutExtension(zipPath);
-
             using (var archive = ZipFile.OpenRead(zipPath))
             {
                 var entries = archive.Entries.ToList();
@@ -237,32 +235,29 @@ namespace Com.Scm.Upgrade
 
                 foreach (var entry in entries)
                 {
-                    var path = TrimStart(entry.FullName, fileName);
+                    var path = Path.Combine(installPath, entry.FullName);
                     if (path.EndsWith("/"))
                     {
-                        var dirPath = Path.Combine(installPath, path);
-                        Directory.CreateDirectory(dirPath);
+                        Directory.CreateDirectory(path);
                         result.ProcessedCount++;
                         continue;
                     }
 
-                    var docPath = Path.Combine(installPath, path);
-
                     bool shouldIgnore = false;
-                    if (ignoreFiles != null && ignoreFiles.Any(ignore => docPath.Contains(ignore, StringComparison.OrdinalIgnoreCase)))
+                    if (ignoreFiles != null && ignoreFiles.Any(ignore => path.Contains(ignore, StringComparison.OrdinalIgnoreCase)))
                     {
-                        if (File.Exists(docPath))
+                        if (File.Exists(path))
                         {
                             result.SkippedCount++;
-                            result.SkippedFiles.Add(docPath);
+                            result.SkippedFiles.Add(path);
                             shouldIgnore = true;
                         }
                     }
 
                     if (!shouldIgnore)
                     {
-                        Directory.CreateDirectory(Path.GetDirectoryName(docPath));
-                        entry.ExtractToFile(docPath, true);
+                        Directory.CreateDirectory(Path.GetDirectoryName(path));
+                        entry.ExtractToFile(path, true);
                     }
 
                     result.ProcessedCount++;
@@ -531,19 +526,6 @@ namespace Com.Scm.Upgrade
             Log("");
             Log("[信息] 升级程序已结束，按任意键退出...");
             Console.ReadKey();
-        }
-
-        private string TrimStart(string path, string start)
-        {
-            if (string.IsNullOrEmpty(path))
-            {
-                return string.Empty;
-            }
-            if (path.StartsWith(start, StringComparison.OrdinalIgnoreCase))
-            {
-                return path.Substring(start.Length);
-            }
-            return path;
         }
 
         private void Log(string message)
