@@ -45,11 +45,25 @@ namespace Com.Scm.Upgrade
             set => SetProperty(ref _appInfo, value);
         }
 
+        private Visibility _appVisibility = Visibility.Visible;
+        public Visibility AppVisibility
+        {
+            get => _appVisibility;
+            set => SetProperty(ref _appVisibility, value);
+        }
+
         private string _verInfo;
         public string VerInfo
         {
             get => _verInfo;
             set => SetProperty(ref _verInfo, value);
+        }
+
+        private Visibility _verVisibility = Visibility.Visible;
+        public Visibility VerVisibility
+        {
+            get => _verVisibility;
+            set => SetProperty(ref _verVisibility, value);
         }
 
         private string _notice;
@@ -71,6 +85,13 @@ namespace Com.Scm.Upgrade
         {
             get => _steps;
             set => SetProperty(ref _steps, value);
+        }
+
+        private Visibility _stepsVisibility = Visibility.Collapsed;
+        public Visibility StepsVisibility
+        {
+            get => _stepsVisibility;
+            set => SetProperty(ref _stepsVisibility, value);
         }
 
         private bool _isRunning;

@@ -1,6 +1,5 @@
 using Com.Scm.Upgrade.Config;
 using System.IO.Compression;
-using System.Net.Http;
 
 namespace Com.Scm.Upgrade
 {
@@ -127,16 +126,16 @@ namespace Com.Scm.Upgrade
             _Actions[UpgradeOption.RenameDir] = new UpgradeAction
             {
                 Option = UpgradeOption.RenameDir,
-                Title = "重命名目录",
-                Description = "重命名指定目录",
+                Title = "更名目录",
+                Description = "更名指定目录",
                 Execute = ExecuteRenameDir
             };
 
             _Actions[UpgradeOption.RenameDoc] = new UpgradeAction
             {
                 Option = UpgradeOption.RenameDoc,
-                Title = "重命名文件",
-                Description = "重命名指定文件",
+                Title = "更名文件",
+                Description = "更名指定文件",
                 Execute = ExecuteRenameDoc
             };
         }
@@ -212,7 +211,7 @@ namespace Com.Scm.Upgrade
                 var action = GetAction(step.Option);
                 if (action == null)
                 {
-                    Log($"[步骤{stepNumber}/{config.Steps.Count}] [跳过] 未知操作类型：{step.Option}");
+                    Log(stepNumber, config.Steps.Count, $"跳过未知操作类型：{step.Option}");
                     StepStatusChanged?.Invoke(stepNumber, "未知操作", "跳过", false);
                     continue;
                 }
@@ -220,7 +219,7 @@ namespace Com.Scm.Upgrade
                 var title = string.IsNullOrEmpty(step.Title) ? action.Title : step.Title;
                 var description = string.IsNullOrEmpty(step.Description) ? action.Description : step.Description;
 
-                Log($"[步骤{stepNumber}/{config.Steps.Count}] {title}");
+                Log(stepNumber, config.Steps.Count, title);
                 Log($"   {description}");
 
                 StepStatusChanged?.Invoke(stepNumber, title, "执行中", false);
@@ -235,27 +234,27 @@ namespace Com.Scm.Upgrade
 
                     if (!step.ContinueOnError)
                     {
-                        Log($"   [终止] 步骤失败且不允许继续，终止升级流程");
+                        Log("终止", $"步骤失败且不允许继续，终止升级流程");
                         throw new Exception($"步骤 {stepNumber} 执行失败：{result.Message}");
                     }
 
-                    Log($"   [继续] 步骤失败但允许继续，继续执行后续步骤");
+                    Log("继续", $"步骤失败但允许继续，继续执行后续步骤");
                 }
                 else
                 {
-                    Log($"   [完成] {result.Message}");
+                    Log("完成", result.Message);
 
                     StepStatusChanged?.Invoke(stepNumber, title, result.Message, true);
 
                     if (step.WaitTime > 0)
                     {
-                        Log($"   [等待] 开始等待 {step.WaitTime} 秒...");
+                        Log("等待", $"开始等待 {step.WaitTime} 秒...");
                         for (int remaining = step.WaitTime; remaining > 0; remaining--)
                         {
-                            Log($"   [等待] 剩余 {remaining} 秒...");
+                            LogTime(remaining);
                             Thread.Sleep(1000);
                         }
-                        Log($"   [等待] 等待完成");
+                        Log("等待", $"等待结束");
                     }
                 }
 
@@ -288,11 +287,11 @@ namespace Com.Scm.Upgrade
                 }
                 catch (Exception ex)
                 {
-                    Log($"   [重试] 第 {attempt} 次尝试失败：{ex.Message}");
+                    Log("重试", $"第 {attempt} 次尝试失败：{ex.Message}");
 
                     if (attempt <= maxRetry)
                     {
-                        Log($"   [重试] 等待 {retryDelay} 毫秒后重试...");
+                        Log("重试", $"等待 {retryDelay} 毫秒后重试...");
                         Thread.Sleep(retryDelay);
                     }
                     else
@@ -324,7 +323,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                Log($"   [下载] 从 {step.Url} 下载到 {destPath}");
+                Log("下载", $"从 {step.Url} 下载到 {destPath}");
 
                 var response = _HttpClient.GetAsync(step.Url, HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult();
                 response.EnsureSuccessStatusCode();
@@ -366,7 +365,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                Log($"   [执行] 命令：{step.Command} {step.Args ?? ""}");
+                Log("执行", $"命令：{step.Command} {step.Args ?? ""}");
 
                 var parts = ParseCommand(step.Command);
                 var exePath = parts.Item1;
@@ -393,11 +392,11 @@ namespace Com.Scm.Upgrade
 
                         if (!string.IsNullOrEmpty(output))
                         {
-                            Log($"   [输出] {output.Trim().Substring(0, Math.Min(200, output.Length))}");
+                            Log("输出", output.Trim().Substring(0, Math.Min(200, output.Length)));
                         }
                         if (!string.IsNullOrEmpty(error))
                         {
-                            Log($"   [警告] {error.Trim().Substring(0, Math.Min(200, error.Length))}");
+                            Log("警告", error.Trim().Substring(0, Math.Min(200, error.Length)));
                         }
 
                         if (exited)
@@ -443,7 +442,7 @@ namespace Com.Scm.Upgrade
             {
                 if (Directory.Exists(step.Source))
                 {
-                    Log($"   [压缩] 目录：{step.Source} -> {destPath}");
+                    Log("压缩", $"目录：{step.Source} -> {destPath}");
 
                     var files = Directory.GetFiles(step.Source, "*", SearchOption.AllDirectories);
                     var totalFiles = files.Length;
@@ -468,7 +467,7 @@ namespace Com.Scm.Upgrade
                 }
                 else if (File.Exists(step.Source))
                 {
-                    Log($"   [压缩] 文件：{step.Source} -> {destPath}");
+                    Log("压缩", $"文件：{step.Source} -> {destPath}");
 
                     Directory.CreateDirectory(Path.GetDirectoryName(destPath) ?? ".");
 
@@ -507,7 +506,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                Log($"   [解压] {step.Source} -> {destPath}");
+                Log("解压", $"{step.Source} -> {destPath}");
                 int totalEntries = 0;
 
                 using (var archive = ZipFile.OpenRead(step.Source))
@@ -574,7 +573,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                Log($"   [移动] 目录：{step.Source} -> {step.Destination}");
+                Log("移动", $"目录：{step.Source} -> {step.Destination}");
                 MoveDirectory(step.Source, step.Destination, step.Overwrite);
                 Directory.Delete(step.Source, true);
 
@@ -605,7 +604,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                Log($"   [移动] 文件：{step.Source} -> {step.Destination}");
+                Log("移动", $"文件：{step.Source} -> {step.Destination}");
 
                 Directory.CreateDirectory(Path.GetDirectoryName(step.Destination) ?? ".");
 
@@ -643,7 +642,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                Log($"   [复制] 目录：{step.Source} -> {step.Destination}");
+                Log("复制", $"目录：{step.Source} -> {step.Destination}");
 
                 CopyDirectory(step.Source, step.Destination, step.Overwrite);
 
@@ -674,7 +673,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                Log($"   [复制] 文件：{step.Source} -> {step.Destination}");
+                Log("复制", $"文件：{step.Source} -> {step.Destination}");
 
                 Directory.CreateDirectory(Path.GetDirectoryName(step.Destination) ?? ".");
                 File.Copy(step.Source, step.Destination, step.Overwrite);
@@ -696,7 +695,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                Log($"   [创建] 目录：{step.Path}");
+                Log("创建", $"目录：{step.Path}");
 
                 Directory.CreateDirectory(step.Path);
 
@@ -717,7 +716,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                Log($"   [创建] 文件：{step.Path}");
+                Log("创建", $"文件：{step.Path}");
 
                 Directory.CreateDirectory(Path.GetDirectoryName(step.Path) ?? ".");
 
@@ -750,7 +749,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                Log($"   [删除] 目录：{step.Path}");
+                Log("删除", $"目录：{step.Path}");
 
                 Directory.Delete(step.Path, true);
 
@@ -776,7 +775,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                Log($"   [删除] 文件：{step.Path}");
+                Log("删除", $"文件：{step.Path}");
 
                 File.Delete(step.Path);
 
@@ -807,7 +806,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                Log($"   [重命名] 目录：{step.OldName} -> {step.NewName}");
+                Log("更名", $"目录：{step.OldName} -> {step.NewName}");
                 if (Directory.Exists(step.NewName))
                 {
                     if (!step.Overwrite)
@@ -820,11 +819,11 @@ namespace Com.Scm.Upgrade
 
                 Directory.Move(step.OldName, step.NewName);
 
-                return new UpgradeResult { Success = true, Message = "目录重命名完成" };
+                return new UpgradeResult { Success = true, Message = "目录更名完成" };
             }
             catch (Exception ex)
             {
-                return new UpgradeResult { Success = false, Message = $"重命名目录失败：{ex.Message}" };
+                return new UpgradeResult { Success = false, Message = $"更名目录失败：{ex.Message}" };
             }
         }
 
@@ -847,7 +846,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                Log($"   [重命名] 文件：{step.OldName} -> {step.NewName}");
+                Log("更名", $"文件：{step.OldName} -> {step.NewName}");
                 if (File.Exists(step.NewName))
                 {
                     if (!step.Overwrite)
@@ -860,11 +859,11 @@ namespace Com.Scm.Upgrade
 
                 File.Move(step.OldName, step.NewName);
 
-                return new UpgradeResult { Success = true, Message = "文件重命名完成" };
+                return new UpgradeResult { Success = true, Message = "文件更名完成" };
             }
             catch (Exception ex)
             {
-                return new UpgradeResult { Success = false, Message = $"重命名文件失败：{ex.Message}" };
+                return new UpgradeResult { Success = false, Message = $"更名文件失败：{ex.Message}" };
             }
         }
 
@@ -948,6 +947,21 @@ namespace Com.Scm.Upgrade
         private void Log(string message)
         {
             LogMessage?.Invoke(message);
+        }
+
+        private void Log(int step, int count, string message)
+        {
+            Log($"[步骤{step}/{count}] " + message);
+        }
+
+        private void Log(string info, string message)
+        {
+            Log($"   [{info}] {message}");
+        }
+
+        private void LogTime(int time)
+        {
+            Log($"   [等待] 剩余 {time} 秒...");
         }
     }
 }
