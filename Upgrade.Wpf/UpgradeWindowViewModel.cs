@@ -270,7 +270,8 @@ namespace Com.Scm.Upgrade
                 }
                 catch (OperationCanceledException)
                 {
-                    Notice = "用户已取消升级";
+                    //Notice = "用户已取消升级";
+                    Log("用户已取消升级");
                     LaterVisibility = Visibility.Collapsed;
                     StartVisibility = Visibility.Collapsed;
                     CloseEnabled = true;
@@ -278,7 +279,8 @@ namespace Com.Scm.Upgrade
                 }
                 catch (Exception ex)
                 {
-                    Notice = $"升级失败：{ex.Message}";
+                    //Notice = $"升级失败：{ex.Message}";
+                    Log($"升级失败：{ex.Message}");
                     LaterVisibility = Visibility.Collapsed;
                     StartVisibility = Visibility.Collapsed;
                     CloseEnabled = true;
@@ -372,7 +374,8 @@ namespace Com.Scm.Upgrade
 
         public void LogStep(int step, int count, string message)
         {
-            Notice = $"[步骤{step}/{count}] " + message;
+            //Notice = $"[步骤{step}/{count}] " + message;
+            Log($"[步骤{step}/{count}] " + message);
         }
 
         public void LogStepInfo(string info, string message)
