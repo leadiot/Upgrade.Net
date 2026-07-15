@@ -11,6 +11,11 @@ namespace Upgrade.Net
         void Log(string message);
 
         /// <summary>
+        /// 
+        /// </summary>
+        void LogNewLine();
+
+        /// <summary>
         /// 步骤概要
         /// </summary>
         /// <param name="step"></param>

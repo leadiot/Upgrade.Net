@@ -160,7 +160,7 @@ namespace Com.Scm.Upgrade
             Log($"升级程序 v{MAJOR}.{MINOR}.{PATCH}.{BUILD} ({RELEASE})");
             Log($"开始执行 {config.Steps.Count} 个升级步骤...");
             Log("────────────────────────────────────────");
-            Log("");
+            LogNewLine();
 
             var failedSteps = new List<int>();
 
@@ -226,7 +226,7 @@ namespace Com.Scm.Upgrade
                     LogStepStatus(stepNumber, StepStatus.Success, title, result.Message);
                 }
 
-                Log("");
+                LogNewLine();
             }
 
             Log("────────────────────────────────────────");
@@ -323,7 +323,7 @@ namespace Com.Scm.Upgrade
                     }
                 }
 
-                Log("");
+                LogNewLine();
                 step.File = destPath;
                 return new UpgradeResult { Success = true, Message = $"文件下载完成，大小：{FormatFileSize(new FileInfo(destPath).Length)}" };
             }
@@ -431,22 +431,26 @@ namespace Com.Scm.Upgrade
 
                     Directory.CreateDirectory(Path.GetDirectoryName(destPath) ?? ".");
 
+                    var startTime = DateTime.Now;
+
                     using (var zipStream = File.Create(destPath))
                     using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
                     {
                         for (int i = 0; i < files.Length; i++)
                         {
                             var filePath = files[i];
-                            var relativePath = Path.GetRelativePath(step.Source, filePath);
-                            archive.CreateEntryFromFile(filePath, relativePath, CompressionLevel.Optimal);
 
                             var progress = (int)((i + 1) * 100 / totalFiles);
-                            LogStepProgress(progress, $"压缩进度：{i + 1}/{totalFiles}");
+                            LogStepProgress(progress, $"压缩中 [{i + 1}/{totalFiles}] {Path.GetFileName(filePath)}");
+
+                            var relativePath = Path.GetRelativePath(step.Source, filePath);
+                            archive.CreateEntryFromFile(filePath, relativePath, CompressionLevel.Optimal);
                         }
                     }
 
-                    Log("");
-                    return new UpgradeResult { Success = true, Message = $"目录压缩完成，共 {totalFiles} 个文件，大小：{FormatFileSize(new FileInfo(destPath).Length)}" };
+                    var elapsed = DateTime.Now - startTime;
+                    LogNewLine();
+                    return new UpgradeResult { Success = true, Message = $"目录压缩完成，共 {totalFiles} 个文件，大小：{FormatFileSize(new FileInfo(destPath).Length)}，耗时：{elapsed.TotalSeconds:F1}秒" };
                 }
                 else if (File.Exists(step.Source))
                 {
@@ -490,6 +494,15 @@ namespace Com.Scm.Upgrade
             try
             {
                 LogStepInfo("解压", $"{step.Source} -> {destPath}");
+
+                var zipFileSize = new FileInfo(step.Source).Length;
+                LogStepInfo("统计", $"压缩包大小：{FormatFileSize(zipFileSize)}");
+
+                if (zipFileSize > 100 * 1024 * 1024)
+                {
+                    LogStepInfo("提示", $"压缩包较大（{FormatFileSize(zipFileSize)}），解压可能需要较长时间，请耐心等待...");
+                }
+
                 int totalEntries = 0;
 
                 using (var archive = ZipFile.OpenRead(step.Source))
@@ -502,7 +515,21 @@ namespace Com.Scm.Upgrade
                         return new UpgradeResult { Success = false, Message = "压缩包为空" };
                     }
 
+                    var totalUncompressedSize = entries.Sum(e => e.Length);
+                    LogStepInfo("统计", $"压缩包内共 {totalEntries} 个文件，解压后大小：{FormatFileSize(totalUncompressedSize)}");
+
+                    if (totalEntries > 100)
+                    {
+                        LogStepInfo("提示", $"文件数量较多（{totalEntries}个），解压可能需要较长时间，请耐心等待...");
+                    }
+                    if (totalUncompressedSize > 500 * 1024 * 1024)
+                    {
+                        LogStepInfo("提示", $"解压后文件总大小较大（{FormatFileSize(totalUncompressedSize)}），解压可能需要较长时间，请耐心等待...");
+                    }
+
                     Directory.CreateDirectory(destPath);
+
+                    var startTime = DateTime.Now;
 
                     for (int i = 0; i < entries.Count; i++)
                     {
@@ -519,18 +546,20 @@ namespace Com.Scm.Upgrade
 
                         if (File.Exists(path) && !step.Overwrite)
                         {
+                            LogStepInfo("跳过", $"文件已存在且不覆盖：{entry.FullName}");
                             continue;
                         }
 
                         entry.ExtractToFile(path, step.Overwrite);
 
                         var progress = (int)((i + 1) * 100 / totalEntries);
-                        LogStepProgress(progress, $"解压进度：{i + 1}/{totalEntries}");
+                        LogStepProgress(progress, $"解压中 [{i + 1}/{totalEntries}] {entry.FullName}");
                     }
-                }
 
-                Log("");
-                return new UpgradeResult { Success = true, Message = $"解压完成，共 {totalEntries} 个文件" };
+                    var elapsed = DateTime.Now - startTime;
+                    LogNewLine();
+                    return new UpgradeResult { Success = true, Message = $"解压完成，共 {totalEntries} 个文件，耗时：{elapsed.TotalSeconds:F1}秒" };
+                }
             }
             catch (Exception ex)
             {
@@ -931,6 +960,11 @@ namespace Com.Scm.Upgrade
         private void Log(string message)
         {
             _View?.Log(message);
+        }
+
+        private void LogNewLine()
+        {
+            _View?.LogNewLine();
         }
 
         private void LogStep(int step, int count, string message)

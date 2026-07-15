@@ -108,6 +108,11 @@ namespace Com.Scm.Upgrade
             Console.WriteLine(message);
         }
 
+        public void LogNewLine()
+        {
+            Console.WriteLine("");
+        }
+
         public void LogStep(int step, int count, string message)
         {
             Console.WriteLine($"[步骤{step}/{count}] " + message);

@@ -360,6 +360,10 @@ namespace Com.Scm.Upgrade
             LogToFile(message);
         }
 
+        public void LogNewLine()
+        {
+        }
+
         public void LogStep(int step, int count, string message)
         {
             Notice = $"[步骤{step}/{count}] " + message;
