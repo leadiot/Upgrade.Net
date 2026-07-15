@@ -155,6 +155,8 @@ namespace Com.Scm.Upgrade
         public ICommand LaterCommand { get; }
         public ICommand CloseWindowCommand { get; }
 
+        public event Action<int> ScrollToStepRequested;
+
         private readonly UpgradeConfig _config;
         private readonly Upgrade _upgrade;
         private StreamWriter _writer;
@@ -248,18 +250,16 @@ namespace Com.Scm.Upgrade
                 catch (OperationCanceledException)
                 {
                     Notice = "用户已取消升级";
-                    StartEnabled = true;
-                    LaterEnabled = true;
                     LaterVisibility = Visibility.Collapsed;
-                    StartButtonText = "立即更新";
+                    StartVisibility = Visibility.Collapsed;
+                    CloseVisibility = Visibility.Visible;
                 }
                 catch (Exception ex)
                 {
                     Notice = $"更新失败：{ex.Message}";
-                    StartEnabled = true;
-                    LaterEnabled = true;
                     LaterVisibility = Visibility.Collapsed;
-                    StartButtonText = "立即更新";
+                    StartVisibility = Visibility.Collapsed;
+                    CloseVisibility = Visibility.Visible;
                 }
                 finally
                 {
@@ -312,6 +312,11 @@ namespace Com.Scm.Upgrade
                     step.Title = title;
                     step.Message = message;
                     step.Status = status;
+
+                    if (status == StepStatus.Running)
+                    {
+                        ScrollToStepRequested?.Invoke(stepNumber - 1);
+                    }
                 }
             });
         }

@@ -1,5 +1,6 @@
 using Com.Scm.Upgrade.Config;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace Com.Scm.Upgrade
@@ -16,12 +17,22 @@ namespace Com.Scm.Upgrade
 
             TbTitle.Text = $"Upgrade.Wpf v{UpgradeWindowViewModel.MAJOR}.{UpgradeWindowViewModel.MINOR}.{UpgradeWindowViewModel.PATCH}.{UpgradeWindowViewModel.BUILD}";
 
+            _viewModel.ScrollToStepRequested += ScrollToStep;
             Loaded += OnWindowLoaded;
         }
 
         private void OnWindowLoaded(object sender, RoutedEventArgs e)
         {
             _viewModel?.OnWindowLoaded();
+        }
+
+        private void ScrollToStep(int stepIndex)
+        {
+            if (StepItemsControl.Items.Count == 0 || stepIndex < 0 || stepIndex >= StepItemsControl.Items.Count)
+                return;
+
+            var container = StepItemsControl.ItemContainerGenerator.ContainerFromIndex(stepIndex) as FrameworkElement;
+            container?.BringIntoView();
         }
 
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

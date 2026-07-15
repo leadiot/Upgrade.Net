@@ -22,7 +22,7 @@ namespace Com.Scm.Upgrade
                 {
                     Console.Write($"\r{status}");
                 };
-                upgrade.StepStatusChanged += (stepNumber, title, message, success) =>
+                upgrade.StepStatusChanged += (stepNumber, success, title, message) =>
                 {
                     var status = success switch
                     {

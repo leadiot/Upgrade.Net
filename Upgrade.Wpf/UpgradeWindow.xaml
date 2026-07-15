@@ -145,7 +145,7 @@
             </Border>
 
             <!-- 3. 主体内容 -->
-            <Border Grid.Row="2" Padding="24">
+            <Border Grid.Row="2" Padding="24" Background="White">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -230,8 +230,8 @@
                         <!-- 步骤列表 -->
                         <Border Grid.Row="1" Margin="0,6,0,0" Background="{StaticResource ChinaBluePale}" Padding="16,14,0,14" CornerRadius="0,6,6,0" 
                                 BorderBrush="{StaticResource ChinaBlue}" BorderThickness="3,0,0,0">
-                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding Steps}">
+                            <ScrollViewer x:Name="StepScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                <ItemsControl x:Name="StepItemsControl" ItemsSource="{Binding Steps}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Grid Margin="0,4,0,4">
@@ -290,7 +290,7 @@
             </StackPanel>
 
             <!-- 5. 底部按钮区 -->
-            <Border Grid.Row="4" BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" Background="#FAFBFC" Padding="16,24"
+            <Border Grid.Row="4" BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" Background="#FAFBFC" Padding="16,16"
                     CornerRadius="0,0,8,8">
                 <Grid>
                     <Grid.ColumnDefinitions>
