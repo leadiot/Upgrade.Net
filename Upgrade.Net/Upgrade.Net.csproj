@@ -1,10 +1,30 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-	  <Nullable>disable</Nullable>
-	  <RootNamespace>Com.Scm.Upgrade</RootNamespace>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>disable</Nullable>
+		<RootNamespace>Com.Scm.Upgrade</RootNamespace>
+		<PackageId>Com.Scm.Upgrade</PackageId>
+		<Version>1.0.1</Version>
+		<Authors>SCM Team</Authors>
+		<Company>SCM</Company>
+		<Description>基于 .NET 开发的应用程序升级程序核心类库，支持自定义升级步骤配置、16种操作类型、重试机制、等待时间等功能。</Description>
+		<PackageDescription>
+			基于 .NET 开发的应用程序升级程序核心类库，支持控制台和 WPF 两种版本，提供完整的下载、备份、解压、启动流程，支持自定义升级步骤配置。
 
+			主要功能：
+			- 自定义升级步骤：支持通过 JSON 配置文件定义动态升级步骤序列
+			- 16种操作类型：下载、命令执行、启动程序、压缩、解压、移动、复制、创建、删除、更名等
+			- 等待时间：每个步骤可配置等待时间，支持倒计时显示
+			- 重试机制：支持配置重试次数和重试延迟
+			- 视图接口：通过 UpgradeView 接口实现控制台和 WPF 视图复用
+		</PackageDescription>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageProjectUrl>https://github.com/leadiot/Upgrade.Net</PackageProjectUrl>
+		<PackageRepositoryUrl>https://github.com/leadiot/Upgrade.Net</PackageRepositoryUrl>
+		<PackageTags>upgrade,update,installer,dotnet,wpf,console</PackageTags>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageIcon>logo128.png</PackageIcon>
+	</PropertyGroup>
 </Project>

@@ -1,4 +1,4 @@
-﻿using Com.Scm.Upgrade;
+using Com.Scm.Upgrade;
 
 namespace Upgrade.Net
 {
@@ -51,7 +51,7 @@ namespace Upgrade.Net
         /// <param name="status"></param>
         /// <param name="title"></param>
         /// <param name="message"></param>
-        void LogStepStatus(int stepNumber, StepStatus status, string title, string message);
+        void LogStepStatus(int stepNumber, Com.Scm.Upgrade.Config.StepStatus status, string title, string message);
 
         void ResetProgress();
     }

@@ -1,0 +1,105 @@
+<Window x:Class="Test.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Upgrade.Net 使用示例" Height="700" Width="500"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <SolidColorBrush x:Key="PrimaryColor" Color="#2A6BC6"/>
+        <SolidColorBrush x:Key="PrimaryLight" Color="#4A8AE8"/>
+        <SolidColorBrush x:Key="SuccessColor" Color="#38A169"/>
+        <SolidColorBrush x:Key="ErrorColor" Color="#D94A4A"/>
+        <SolidColorBrush x:Key="TextColor" Color="#2C3E50"/>
+        <SolidColorBrush x:Key="TextSubColor" Color="#7A8B9E"/>
+
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="24,10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{StaticResource PrimaryColor}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource PrimaryLight}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Background" Value="#E0E0E0"/>
+                                <Setter Property="Foreground" Value="#A0A0A0"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="InfoLabel" TargetType="Label">
+            <Setter Property="Foreground" Value="{StaticResource TextSubColor}"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <Style x:Key="ValueLabel" TargetType="Label">
+            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="{StaticResource PrimaryColor}" CornerRadius="8" Padding="24" Margin="0,0,0,16">
+            <StackPanel>
+                <Label Content="Upgrade.Net 使用示例" Foreground="White" FontSize="22" FontWeight="Bold"/>
+                <Label Content="基于 .NET 开发的应用程序升级程序核心类库" Foreground="#E8F0FE" FontSize="13" Margin="0,4,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="8">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Label Grid.Row="0" Content="升级日志" FontSize="16" FontWeight="Bold" Foreground="{StaticResource TextColor}" Margin="0,6,0,6"/>
+                <TextBox x:Name="LogTextBox" 
+                    Grid.Row="1"
+                    IsReadOnly="True" 
+                    FontFamily="Consolas" 
+                    FontSize="12" 
+                    Background="#F8F9FA" 
+                    BorderThickness="0"
+                    VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Auto"/>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="0,16,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Label Name="StatusLabel" Margin="0,8"/>
+            <Button Grid.Column="1" Content="升级自身" Style="{StaticResource PrimaryButton}" Click="UpgradeSelft_Click"/>
+            <Button Grid.Column="3" Content="升级外部" Style="{StaticResource PrimaryButton}" Click="UpgradeOther_Click"/>
+            <Button Grid.Column="5" Content="重置日志" Click="ResetLog_Click" Padding="16,10" FontSize="14" Cursor="Hand"/>
+        </Grid>
+    </Grid>
+</Window>

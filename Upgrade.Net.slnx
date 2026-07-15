@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Test/">
+    <Project Path="Test/Test.csproj" Id="8a8a677e-0820-4db2-856c-e1533285af42" />
+  </Folder>
   <Project Path="Upgrade.Cmd/Upgrade.Cmd.csproj" Id="09df079b-ba22-49ee-af6b-a676abe9fd4c" />
   <Project Path="Upgrade.Net/Upgrade.Net.csproj" Id="aeb31e20-3573-45d1-8a98-991f969e2aba" />
   <Project Path="Upgrade.Wpf/Upgrade.Wpf.csproj" />
