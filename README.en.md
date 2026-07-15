@@ -53,9 +53,8 @@ Upgrade.Net is a lightweight Windows application upgrade solution that supports 
 
 | Module | Description |
 |--------|-------------|
-| Upgrade | Upgrade core logic class (Console version) |
+| UpgradeCommand | Upgrade command class, handling download, decompression, restart logic (Console version) |
 | UpgradeWindow | Upgrade window, handling download, decompression, restart logic (WPF version) |
-| MainWindow | Main window (WPF version) |
 | SplashWindow | Splash screen window (WPF version) |
 | UpgradeConfig | Upgrade configuration management class |
 | StepConfig | Step configuration class |
