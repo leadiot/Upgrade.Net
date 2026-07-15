@@ -166,8 +166,8 @@
       "name": "下载测试文件",
       "description": "下载公开的测试文件到本地",
       "waitTime": 0,
-      "url": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
-      "file": "D:\\temp\\upgrade_test\\downloaded_test.pdf",
+      "url": "https://download.sqlark.com/fullPackage/Windows/408830/SQLark_V3.10_Win_x86_64.zip",
+      "file": "D:\\temp\\upgrade_test\\SQLark_V3.10_Win_x86_64.zip",
       "retryCount": 2,
       "retryDelay": 3000
     },

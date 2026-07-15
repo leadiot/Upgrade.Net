@@ -6,16 +6,17 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Upgrade.Net;
 
 namespace Com.Scm.Upgrade
 {
-    public class UpgradeWindowViewModel : ScmDvo
+    public class UpgradeWindowViewModel : ScmDvo, UpgradeView
     {
-        public const int MAJOR = 1;
-        public const int MINOR = 0;
-        public const int PATCH = 2;
-        public const int BUILD = 3;
-        public const string RELEASE = "2026-07-14";
+        public const int MAJOR = 2;
+        public const int MINOR = 2;
+        public const int PATCH = 3;
+        public const int BUILD = 4;
+        public const string RELEASE = "2026-07-15";
 
         private ImageSource _icon;
         public ImageSource Icon
@@ -161,7 +162,7 @@ namespace Com.Scm.Upgrade
             set => SetProperty(ref _closeVisibility, value);
         }
 
-        private string _startButtonText = "立即更新";
+        private string _startButtonText = "立即升级";
         public string StartButtonText
         {
             get => _startButtonText;
@@ -182,16 +183,12 @@ namespace Com.Scm.Upgrade
         public UpgradeWindowViewModel(UpgradeConfig config)
         {
             _config = config;
-            _upgrade = new Upgrade();
+            _upgrade = new Upgrade(this);
 
             StartCommand = new RelayCommand(ExecuteStart);
             CloseCommand = new RelayCommand(ExecuteClose);
             LaterCommand = new RelayCommand(ExecuteLater);
             CloseWindowCommand = new RelayCommand(ExecuteCloseWindow);
-
-            _upgrade.LogMessage += OnLogMessage;
-            _upgrade.ProgressChanged += OnProgressChanged;
-            _upgrade.StepStatusChanged += OnStepStatusChanged;
 
             Initialize();
         }
@@ -212,7 +209,7 @@ namespace Com.Scm.Upgrade
             Title = string.IsNullOrEmpty(_config.Title) ? appTitle : _config.Title;
             Subtitle = $"{_config.OldVersion} → {_config.NewVersion}";
             AppInfo = _config.AppInfo ?? "应用简介为空";
-            VerInfo = _config.VerInfo ?? "暂无版本更新说明";
+            VerInfo = _config.VerInfo ?? "暂无版本升级说明";
 
             if (!string.IsNullOrWhiteSpace(_config.Icon) && File.Exists(_config.Icon))
             {
@@ -228,6 +225,8 @@ namespace Com.Scm.Upgrade
                 _config.InstallPath = AppDomain.CurrentDomain.BaseDirectory;
             }
 
+            InitializeStepList();
+
             Notice = "初始化完成，点击开始升级";
         }
 
@@ -240,9 +239,8 @@ namespace Com.Scm.Upgrade
             LaterEnabled = false;
             CloseEnabled = false;
             LaterVisibility = Visibility.Collapsed;
-            StartButtonText = "更新中...";
+            StartButtonText = "升级中...";
 
-            InitializeStepList();
             Notice = "开始升级流程...";
 
             Task.Run(async () =>
@@ -275,7 +273,7 @@ namespace Com.Scm.Upgrade
                 }
                 catch (Exception ex)
                 {
-                    Notice = $"更新失败：{ex.Message}";
+                    Notice = $"升级失败：{ex.Message}";
                     LaterVisibility = Visibility.Collapsed;
                     StartVisibility = Visibility.Collapsed;
                     CloseEnabled = true;
@@ -302,43 +300,6 @@ namespace Com.Scm.Upgrade
         {
             Dispose();
             Application.Current.Shutdown();
-        }
-
-        private void OnLogMessage(string message)
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                Notice = message;
-                LogToFile(message);
-            });
-        }
-
-        private void OnProgressChanged(int percent, string status)
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                Percent = percent;
-                Notice = status;
-            });
-        }
-
-        private void OnStepStatusChanged(int stepNumber, StepStatus status, string title, string message)
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                if (Steps.Count >= stepNumber)
-                {
-                    var step = Steps[stepNumber - 1];
-                    step.Title = title;
-                    step.Message = message;
-                    step.Status = status;
-
-                    if (status == StepStatus.Running)
-                    {
-                        ScrollToStepRequested?.Invoke(stepNumber - 1);
-                    }
-                }
-            });
         }
 
         private void InitializeStepList()
@@ -391,6 +352,63 @@ namespace Com.Scm.Upgrade
                 _writer.Dispose();
                 _writer = null;
             }
+        }
+
+        public void Log(string message)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                Notice = message;
+                LogToFile(message);
+            });
+        }
+
+        public void LogStep(int step, int count, string message)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void LogStepInfo(string info, string message)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void LogStepWait(int time, string message)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void LogStepProgress(int progress, string message)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                Percent = progress;
+                Notice = message;
+            });
+        }
+
+        public void ResetProgress()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void LogStepStatus(int stepNumber, StepStatus status, string title, string message)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                if (Steps.Count >= stepNumber)
+                {
+                    var step = Steps[stepNumber - 1];
+                    step.Title = title;
+                    step.Message = message;
+                    step.Status = status;
+
+                    if (status == StepStatus.Running)
+                    {
+                        ScrollToStepRequested?.Invoke(stepNumber - 1);
+                    }
+                }
+            });
         }
     }
 }

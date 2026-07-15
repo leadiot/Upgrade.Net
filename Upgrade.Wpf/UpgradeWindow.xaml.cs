@@ -1,6 +1,5 @@
 using Com.Scm.Upgrade.Config;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace Com.Scm.Upgrade
@@ -15,7 +14,9 @@ namespace Com.Scm.Upgrade
             _viewModel = new UpgradeWindowViewModel(config);
             DataContext = _viewModel;
 
-            TbTitle.Text = $"Upgrade.Wpf v{UpgradeWindowViewModel.MAJOR}.{UpgradeWindowViewModel.MINOR}.{UpgradeWindowViewModel.PATCH}.{UpgradeWindowViewModel.BUILD}";
+            var title = $"Upgrade.Wpf v{UpgradeWindowViewModel.MAJOR}.{UpgradeWindowViewModel.MINOR}.{UpgradeWindowViewModel.PATCH}.{UpgradeWindowViewModel.BUILD}";
+            this.Title = title;
+            TbTitle.Text = title;
 
             _viewModel.ScrollToStepRequested += ScrollToStep;
             Loaded += OnWindowLoaded;
