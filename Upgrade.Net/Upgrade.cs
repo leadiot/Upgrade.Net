@@ -138,7 +138,7 @@ namespace Com.Scm.Upgrade
             };
         }
 
-        public void Start(UpgradeConfig config)
+        public async Task StartAsync(UpgradeConfig config)
         {
             if (config.Steps == null || config.Steps.Count < 1)
             {
@@ -146,12 +146,20 @@ namespace Com.Scm.Upgrade
                 return;
             }
 
-            ExecuteSteps(config);
+            await ExecuteStepsAsync(config);
         }
 
-        private void ExecuteSteps(UpgradeConfig config)
+        public void Start(UpgradeConfig config)
         {
+            StartAsync(config).GetAwaiter().GetResult();
+        }
+
+        private async Task ExecuteStepsAsync(UpgradeConfig config)
+        {
+            Log("────────────────────────────────────────");
+            Log($"升级程序 v{MAJOR}.{MINOR}.{PATCH}.{BUILD} ({RELEASE})");
             Log($"开始执行 {config.Steps.Count} 个升级步骤...");
+            Log("────────────────────────────────────────");
             Log("");
 
             var failedSteps = new List<int>();
@@ -174,12 +182,17 @@ namespace Com.Scm.Upgrade
                 var title = string.IsNullOrEmpty(step.Title) ? action.Title : step.Title;
                 var description = string.IsNullOrEmpty(step.Description) ? action.Description : step.Description;
 
-                LogStep(stepNumber, config.Steps.Count, title);
+                LogStep(stepNumber, config.Steps.Count, $"正在执行：{title}");
                 LogStepInfo("说明", description);
+
+                if (!string.IsNullOrEmpty(step.Description))
+                {
+                    LogStepInfo("状态", "准备执行...");
+                }
 
                 LogStepStatus(stepNumber, StepStatus.Running, title, "执行中");
 
-                var result = ExecuteStepWithRetry(step, action, stepNumber);
+                var result = await ExecuteStepWithRetryAsync(step, action, stepNumber);
 
                 if (!result.Success)
                 {
@@ -201,13 +214,13 @@ namespace Com.Scm.Upgrade
 
                     if (step.WaitTime > 0)
                     {
-                        LogStepWait(0, $"开始等待 {step.WaitTime} 秒...");
+                        LogStepWait(step.WaitTime, $"等待 {step.WaitTime} 秒后继续...");
                         for (int remaining = step.WaitTime; remaining > 0; remaining--)
                         {
-                            LogStepWait(remaining, $"剩余 {remaining} 秒..");
-                            Thread.Sleep(1000);
+                            LogStepWait(remaining, $"等待中，剩余 {remaining} 秒");
+                            await Task.Delay(1000);
                         }
-                        LogStepWait(0, $"等待结束");
+                        LogStepWait(0, "等待结束，继续下一步");
                     }
 
                     LogStepStatus(stepNumber, StepStatus.Success, title, result.Message);
@@ -216,17 +229,21 @@ namespace Com.Scm.Upgrade
                 Log("");
             }
 
+            Log("────────────────────────────────────────");
             if (failedSteps.Count > 0)
             {
-                Log($"升级完成，{failedSteps.Count} 个步骤失败：{string.Join(", ", failedSteps)}");
+                Log($"升级完成 {failedSteps.Count} 个步骤失败：{string.Join(", ", failedSteps)}");
+                Log("升级提示 请检查失败步骤的错误信息并重新执行");
             }
             else
             {
-                Log("所有升级步骤执行完成");
+                Log("升级完成 所有升级步骤执行完成");
+                Log("升级提示 升级成功");
             }
+            Log("────────────────────────────────────────");
         }
 
-        private UpgradeResult ExecuteStepWithRetry(StepConfig step, UpgradeAction action, int stepNumber)
+        private async Task<UpgradeResult> ExecuteStepWithRetryAsync(StepConfig step, UpgradeAction action, int stepNumber)
         {
             var maxRetry = step.RetryCount;
             var retryDelay = step.RetryDelay;
@@ -238,7 +255,11 @@ namespace Com.Scm.Upgrade
 
                 try
                 {
-                    return action.Execute(step);
+                    if (action.Option == UpgradeOption.Download)
+                    {
+                        return await ExecuteDownloadAsync(step);
+                    }
+                    return await Task.Run(() => action.Execute(step));
                 }
                 catch (Exception ex)
                 {
@@ -247,7 +268,7 @@ namespace Com.Scm.Upgrade
                     if (attempt <= maxRetry)
                     {
                         LogStepInfo("重试", $"等待 {retryDelay} 毫秒后重试...");
-                        Thread.Sleep(retryDelay);
+                        await Task.Delay(retryDelay);
                     }
                     else
                     {
@@ -265,7 +286,7 @@ namespace Com.Scm.Upgrade
             return action;
         }
 
-        private UpgradeResult ExecuteDownload(StepConfig step)
+        private async Task<UpgradeResult> ExecuteDownloadAsync(StepConfig step)
         {
             if (string.IsNullOrWhiteSpace(step.Url))
             {
@@ -280,19 +301,19 @@ namespace Com.Scm.Upgrade
             {
                 LogStepInfo("下载", $"从 {step.Url} 下载到 {destPath}");
 
-                var response = _HttpClient.GetAsync(step.Url, HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult();
+                var response = await _HttpClient.GetAsync(step.Url, HttpCompletionOption.ResponseHeadersRead);
                 response.EnsureSuccessStatusCode();
 
                 var totalBytes = response.Content.Headers.ContentLength ?? -1;
-                using (var stream = response.Content.ReadAsStreamAsync().GetAwaiter().GetResult())
+                using (var stream = await response.Content.ReadAsStreamAsync())
                 using (var fileStream = File.Create(destPath))
                 {
                     var buffer = new byte[81920];
                     long totalRead = 0;
                     int bytesRead;
-                    while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
+                    while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
                     {
-                        fileStream.Write(buffer, 0, bytesRead);
+                        await fileStream.WriteAsync(buffer, 0, bytesRead);
                         totalRead += bytesRead;
                         if (totalBytes > 0)
                         {
@@ -310,6 +331,11 @@ namespace Com.Scm.Upgrade
             {
                 return new UpgradeResult { Success = false, Message = $"下载失败：{ex.Message}" };
             }
+        }
+
+        private UpgradeResult ExecuteDownload(StepConfig step)
+        {
+            return ExecuteDownloadAsync(step).GetAwaiter().GetResult();
         }
 
         private UpgradeResult ExecuteCommand(StepConfig step)

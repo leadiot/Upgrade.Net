@@ -247,7 +247,7 @@ namespace Com.Scm.Upgrade
             {
                 try
                 {
-                    _upgrade.Start(_config);
+                    await _upgrade.StartAsync(_config);
 
                     if (!_config.AutoClose)
                     {
@@ -367,15 +367,14 @@ namespace Com.Scm.Upgrade
 
         public void LogStepInfo(string info, string message)
         {
-            //throw new NotImplementedException();
-            //Notice = message;
+            //Notice = $"[{info}] {message}";
+            LogToFile($"[{info}] {message}");
         }
 
         public void LogStepWait(int time, string message)
         {
-            //throw new NotImplementedException();
             //Notice = message;
-            //Notice = "升级进行中，请稍候……";
+            LogToFile(message);
         }
 
         public void LogStepProgress(int progress, string message)

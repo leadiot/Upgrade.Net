@@ -43,7 +43,7 @@ namespace Com.Scm.Upgrade
 
                 if (!string.IsNullOrEmpty(config.VerInfo))
                 {
-                    Log("[信息] 更新说明：");
+                    Log("[信息] 升级说明：");
                     Log(config.VerInfo);
                 }
 
@@ -69,20 +69,20 @@ namespace Com.Scm.Upgrade
                 if (!config.AutoClose)
                 {
                     Console.WriteLine("");
-                    Console.WriteLine("[信息] 升级程序已结束，按任意键退出...");
+                    Console.WriteLine("按任意键退出应用...");
                     Console.ReadKey();
                 }
                 else
                 {
                     Console.WriteLine("");
-                    Console.WriteLine("[信息] 升级程序即将退出...");
+                    Console.WriteLine("升级程序即将退出...");
                     Thread.Sleep(3000);
                 }
             }
             catch (Exception ex)
             {
                 ShowFooter();
-                Console.WriteLine($"[错误] 更新失败：{ex.Message}");
+                Console.WriteLine($"升级失败：{ex.Message}");
                 Console.ReadKey();
             }
         }
