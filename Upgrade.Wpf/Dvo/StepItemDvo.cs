@@ -35,6 +35,8 @@ namespace Com.Scm.Upgrade
                 OnPropertyChanged(nameof(Status));
                 OnPropertyChanged(nameof(StatusIcon));
                 OnPropertyChanged(nameof(StatusColor));
+                OnPropertyChanged(nameof(StatusBgColor));
+                OnPropertyChanged(nameof(StatusNumberColor));
             }
         }
 
@@ -85,6 +87,50 @@ namespace Com.Scm.Upgrade
                         return "#A0AEC0";
                     default:
                         return "#7A8B9E";
+                }
+            }
+        }
+
+        public string StatusBgColor
+        {
+            get
+            {
+                switch (Status)
+                {
+                    case StepStatus.Pending:
+                        return "#E2E8F0";
+                    case StepStatus.Running:
+                        return "#2A6BC6";
+                    case StepStatus.Success:
+                        return "#38A169";
+                    case StepStatus.Failed:
+                        return "#D94A4A";
+                    case StepStatus.Skipped:
+                        return "#CBD5E0";
+                    default:
+                        return "#E2E8F0";
+                }
+            }
+        }
+
+        public string StatusNumberColor
+        {
+            get
+            {
+                switch (Status)
+                {
+                    case StepStatus.Pending:
+                        return "#4A5568";
+                    case StepStatus.Running:
+                        return "#FFFFFF";
+                    case StepStatus.Success:
+                        return "#FFFFFF";
+                    case StepStatus.Failed:
+                        return "#FFFFFF";
+                    case StepStatus.Skipped:
+                        return "#718096";
+                    default:
+                        return "#4A5568";
                 }
             }
         }
