@@ -77,8 +77,6 @@ Upgrade.Net is a lightweight Windows application upgrade solution that supports 
   "autoStart": true,
   "autoClose": false,
   "showSteps": true,
-  "installPath": "your_app_install_path",
-  "ignoreFiles": ["log", "temp", "database"],
   "appInfo": "your_app_description",
   "verInfo": "your_app_version_info",
   "steps": [
@@ -139,8 +137,6 @@ Upgrade.Net is a lightweight Windows application upgrade solution that supports 
 | autoStart | bool | No | Whether to start the application after upgrade, default false |
 | autoClose | bool | No | Whether to close the updater after upgrade, default false |
 | showSteps | bool | No | Whether to show upgrade step list, default true |
-| installPath | string | Yes | Installation path of the application to be upgraded |
-| ignoreFiles | array | No | List of files to ignore during upgrade |
 | appInfo | string | No | Application description, supports longer text scrolling |
 | verInfo | string | No | Version upgrade description, supports longer text scrolling |
 
@@ -175,6 +171,7 @@ Each step contains the following properties:
 | None | No operation | None |
 | Download | Download file from URL | url, file |
 | Command | Execute command line | command, args(optional) |
+| Launch | Launch application after upgrade | command, args(optional) |
 | Zip | Compress file/directory | source, file |
 | Unzip | Extract file | source, destination, overwrite(optional) |
 | MoveDir | Move directory | source, destination |
@@ -201,8 +198,6 @@ Here is a complete configuration example with all operation types:
   "autoStart": true,
   "autoClose": false,
   "showSteps": true,
-  "installPath": "D:\\MyApp",
-  "ignoreFiles": ["appsettings.json", "logs"],
   "appInfo": "This is a .NET-based application upgrade tool supporting custom step configuration.",
   "verInfo": "Version 2.0.0 update notes:\n1. Added custom step feature\n2. Supports 15 operation types\n3. Added retry mechanism\n4. Optimized UI layout",
   "steps": [
