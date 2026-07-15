@@ -42,20 +42,6 @@ namespace Com.Scm.Upgrade.Config
         public bool ShowSteps { get; set; }
 
         /// <summary>
-        /// 待升级程序安装路径
-        /// 默认：当前所在目录
-        /// 选项：可选
-        /// </summary>
-        public string InstallPath { get; set; }
-
-        /// <summary>
-        /// 升级过程中需要忽略的文件列表（如配置文件、数据库等）
-        /// 默认：null
-        /// 选项：可选
-        /// </summary>
-        public List<string> IgnoreFiles { get; set; }
-
-        /// <summary>
         /// 应用信息配置，用于应用信息的展示
         /// 默认：null
         /// 选项：可选

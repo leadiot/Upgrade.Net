@@ -220,11 +220,6 @@ namespace Com.Scm.Upgrade
                 Icon = new BitmapImage(new Uri("pack://application:,,,/Upgrade.Wpf;component/Resources/logo.ico", UriKind.Absolute));
             }
 
-            if (string.IsNullOrEmpty(_config.InstallPath))
-            {
-                _config.InstallPath = AppDomain.CurrentDomain.BaseDirectory;
-            }
-
             InitializeStepList();
 
             Notice = "初始化完成，点击开始升级";
