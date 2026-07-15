@@ -77,6 +77,252 @@
             <Setter Property="BorderBrush" Value="#E2E8F0"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
+
+        <!-- 滚动条滑块样式 -->
+        <Style x:Key="ScrollBarThumb" TargetType="{x:Type Thumb}">
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="IsTabStop" Value="false"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <Grid>
+                            <!-- 
+                    滚动条滑块设计
+                    可自定义属性：
+                    - Background: 滑块颜色
+                    - CornerRadius: 圆角大小
+                    - Width: 滑块宽度
+                    -->
+                            <Border Background="#646465" CornerRadius="2" Width="3"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="HorizontalScrollBarPageButton" TargetType="{x:Type RepeatButton}">
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Focusable" Value="false"/>
+            <Setter Property="IsTabStop" Value="false"/>
+            <Setter Property="Opacity" Value="0.2"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type RepeatButton}">
+                        <Rectangle Fill="{TemplateBinding Background}" Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="VerticalScrollBarPageButton" TargetType="{x:Type RepeatButton}">
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Focusable" Value="false"/>
+            <Setter Property="IsTabStop" Value="false"/>
+            <Setter Property="Opacity" Value="0.2"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type RepeatButton}">
+                        <Rectangle Fill="{TemplateBinding Background}" Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!--滚动条上下按钮-->
+        <Style x:Key="VerticalScrollBarPageButton2" TargetType="{x:Type RepeatButton}">
+            <Setter Property="OverridesDefaultStyle"  Value="true"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Focusable" Value="false"/>
+            <Setter Property="IsTabStop" Value="false"/>
+            <Setter Property="Opacity"  Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type RepeatButton}">
+                        <Rectangle Fill="#90000000" Width="0" Height="0"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ScmScrollbar" TargetType="{x:Type ScrollBar}">
+            <Setter Property="Stylus.IsPressAndHoldEnabled" Value="false"/>
+            <Setter Property="Stylus.IsFlicksEnabled" Value="false"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Margin" Value="0,1,1,6"/>
+            <Setter Property="Width"  Value="10"/>
+            <Setter Property="MinWidth"  Value="5"/>
+            <Setter Property="Opacity"   Value="0.2"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollBar}">
+                        <Grid x:Name="Bg" SnapsToDevicePixels="true">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto"></RowDefinition>
+                                <RowDefinition Height="*"></RowDefinition>
+                                <RowDefinition Height="auto"></RowDefinition>
+                            </Grid.RowDefinitions>
+                            <RepeatButton  Grid.Row="0" Style="{StaticResource VerticalScrollBarPageButton2}" Command="{x:Static ScrollBar.PageUpCommand}"/>
+                            <Track x:Name="PART_Track"   Grid.Row="1" IsEnabled="{TemplateBinding IsMouseOver}" IsDirectionReversed="true">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Style="{StaticResource VerticalScrollBarPageButton}" Command="{x:Static ScrollBar.PageUpCommand}"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Style="{StaticResource VerticalScrollBarPageButton}" Command="{x:Static ScrollBar.PageDownCommand}"/>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource ScrollBarThumb}"/>
+                                </Track.Thumb>
+                            </Track>
+                            <RepeatButton Grid.Row="2" Style="{StaticResource VerticalScrollBarPageButton2}" Command="{x:Static ScrollBar.PageDownCommand}"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Horizontal">
+                    <Setter Property="Background"  Value="Transparent"/>
+                    <Setter Property="Margin" Value="1,0,6,1"/>
+                    <Setter Property="Height"   Value="5"/>
+                    <Setter Property="MinHeight"  Value="5"/>
+                    <Setter Property="Width"    Value="Auto"/>
+                    <Setter Property="Opacity" Value="0.2"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type ScrollBar}">
+                                <Grid x:Name="Bg" SnapsToDevicePixels="true">
+                                    <Track x:Name="PART_Track" IsEnabled="{TemplateBinding IsMouseOver}">
+                                        <Track.DecreaseRepeatButton>
+                                            <RepeatButton Style="{StaticResource HorizontalScrollBarPageButton}"  Command="{x:Static ScrollBar.PageLeftCommand}"/>
+                                        </Track.DecreaseRepeatButton>
+                                        <Track.IncreaseRepeatButton>
+                                            <RepeatButton Style="{StaticResource HorizontalScrollBarPageButton}"  Command="{x:Static ScrollBar.PageRightCommand}"/>
+                                        </Track.IncreaseRepeatButton>
+                                        <Track.Thumb>
+                                            <Thumb Style="{StaticResource ScrollBarThumb}"/>
+                                        </Track.Thumb>
+                                    </Track>
+                                </Grid>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="ScmScrollviewer" TargetType="{x:Type ScrollViewer}">
+            <Setter Property="BorderBrush" Value="LightGray"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollViewer}">
+                        <Border BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="True">
+                            <Grid Background="{TemplateBinding Background}">
+                                <ScrollContentPresenter  Cursor="{TemplateBinding Cursor}" Margin="{TemplateBinding Padding}" ContentTemplate="{TemplateBinding ContentTemplate}"/>
+                                <ScrollBar x:Name="PART_VerticalScrollBar"
+                                       HorizontalAlignment="Right"
+                                       Maximum="{TemplateBinding ScrollableHeight}"
+                                       Orientation="Vertical"
+                                       Style="{StaticResource ScmScrollbar}"
+                                       ViewportSize="{TemplateBinding ViewportHeight}"
+                                       Value="{TemplateBinding VerticalOffset}"
+                                       Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"/>
+                                <ScrollBar x:Name="PART_HorizontalScrollBar"
+                                       Maximum="{TemplateBinding ScrollableWidth}"
+                                       Orientation="Horizontal"
+                                       Style="{StaticResource ScmScrollbar}"
+                                       VerticalAlignment="Bottom"
+                                       Value="{TemplateBinding HorizontalOffset}"
+                                       ViewportSize="{TemplateBinding ViewportWidth}"
+                                       Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <EventTrigger RoutedEvent="ScrollChanged" >
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                                        Storyboard.TargetName="PART_VerticalScrollBar"
+                                        Storyboard.TargetProperty="Opacity"
+                                        To="0.8"
+                                        Duration="0:0:1"/>
+                                        <DoubleAnimation
+                                        Storyboard.TargetName="PART_VerticalScrollBar"
+                                        Storyboard.TargetProperty="Opacity"
+                                        To="0.2"
+                                        Duration="0:0:1"
+                                        BeginTime="0:0:1"/>
+                                        <DoubleAnimation
+                                        Storyboard.TargetName="PART_HorizontalScrollBar"
+                                        Storyboard.TargetProperty="Opacity"
+                                        To="0.8"
+                                        Duration="0:0:1"/>
+                                        <DoubleAnimation
+                                        Storyboard.TargetName="PART_HorizontalScrollBar"
+                                        Storyboard.TargetProperty="Opacity"
+                                        To="0.2"
+                                        Duration="0:0:1"
+                                        BeginTime="0:0:1"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="MouseEnter"
+                                      SourceName="PART_VerticalScrollBar">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                                        Storyboard.TargetName="PART_VerticalScrollBar"
+                                        Storyboard.TargetProperty="Opacity"
+                                        To="0.8"
+                                        Duration="0:0:0.7"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="MouseLeave"
+                                      SourceName="PART_VerticalScrollBar">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                                        Storyboard.TargetName="PART_VerticalScrollBar"
+                                        Storyboard.TargetProperty="Opacity"
+                                        To="0.2"
+                                        Duration="0:0:0.7"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="MouseEnter"
+                                      SourceName="PART_HorizontalScrollBar">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                                        Storyboard.TargetName="PART_HorizontalScrollBar"
+                                        Storyboard.TargetProperty="Opacity"
+                                        To="0.8"
+                                        Duration="0:0:0.7"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="MouseLeave"
+                                      SourceName="PART_HorizontalScrollBar">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                                        Storyboard.TargetName="PART_HorizontalScrollBar"
+                                        Storyboard.TargetProperty="Opacity"
+                                        To="0.2"
+                                        Duration="0:0:0.7"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!--默认ScrollBar-->
+        <Style TargetType="ScrollBar" BasedOn="{StaticResource ScmScrollbar}"/>
+
+        <!--默认ScrollView-->
+        <Style TargetType="ScrollViewer" BasedOn="{StaticResource ScmScrollviewer}"/>
+
     </Window.Resources>
 
     <!-- 外层 Border 用于绘制圆角和阴影 -->
@@ -106,7 +352,7 @@
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid Height="32">
                     <TextBlock x:Name="TbTitle" Text="Upgrade.Wpf 更新" Foreground="White" FontSize="12" 
-                               VerticalAlignment="Center" Margin="12,0,0,0" Opacity="0.9"/>
+                        VerticalAlignment="Center" Margin="12,0,0,0" Opacity="0.9"/>
 
                     <!-- 关闭按钮 -->
                     <Button x:Name="BtCloseWindow" Content="✕" Width="46" Height="32" 
@@ -133,9 +379,9 @@
             <Border Grid.Row="1" Background="{StaticResource ChinaBlue}" Padding="24,20,24,24">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <Border Width="48" Height="48" Background="#33FFFFFF" CornerRadius="8" 
-                            BorderBrush="#4DFFFFFF" BorderThickness="1">
+                        BorderBrush="#4DFFFFFF" BorderThickness="1">
                         <Image Source="{Binding Icon}" Width="32" Height="32" 
-                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
                         <TextBlock Text="{Binding Title}" Foreground="White" FontSize="17" FontWeight="SemiBold"/>
@@ -155,7 +401,7 @@
                     <!-- 左侧：更新日志和应用简介 -->
                     <Grid Grid.Column="0">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         <!-- 应用简介 -->
@@ -167,17 +413,17 @@
                             <StackPanel Grid.Row="0" Orientation="Horizontal">
                                 <Rectangle Width="3" Height="14" Fill="{StaticResource Vermilion}" RadiusX="2" RadiusY="2" VerticalAlignment="Center"/>
                                 <TextBlock
-                                Text="应用简介"
-                                Foreground="{StaticResource ChinaBlue}"
-                                FontSize="13" 
-                                FontWeight="Bold"
-                                Margin="8,0,0,0"
-                                VerticalAlignment="Center"/>
+                                    Text="应用简介"
+                                    Foreground="{StaticResource ChinaBlue}"
+                                    FontSize="13" 
+                                    FontWeight="Bold"
+                                    Margin="8,0,0,0"
+                                    VerticalAlignment="Center"/>
                             </StackPanel>
 
-                            <Border Grid.Row="1" Margin="0,6,0,0" Background="{StaticResource ChinaBluePale}" Padding="16,14,0,14" CornerRadius="0,6,6,0" 
-                                BorderBrush="{StaticResource ChinaBlue}" BorderThickness="3,0,0,0">
-                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <Border Grid.Row="1" Margin="0,6,0,0" Background="{StaticResource ChinaBluePale}" Padding="12,12,0,12" CornerRadius="0,6,6,0" 
+                                BorderBrush="{StaticResource ChinaBlue}" BorderThickness="3,0,0,0" MaxHeight="120">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,12,0">
                                     <TextBlock Text="{Binding AppInfo}" TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource TextSub}"/>
                                 </ScrollViewer>
                             </Border>
@@ -192,17 +438,17 @@
                             <StackPanel Grid.Row="0" Orientation="Horizontal">
                                 <Rectangle Width="3" Height="14" Fill="{StaticResource Vermilion}" RadiusX="2" RadiusY="2" VerticalAlignment="Center"/>
                                 <TextBlock
-                                Text="更新日志"
-                                Foreground="{StaticResource ChinaBlue}"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Margin="8,0,0,0"
-                                VerticalAlignment="Center"/>
+                                    Text="更新日志"
+                                    Foreground="{StaticResource ChinaBlue}"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Margin="8,0,0,0"
+                                    VerticalAlignment="Center"/>
                             </StackPanel>
 
-                            <Border Grid.Row="1" Margin="0,6,0,0" Background="{StaticResource ChinaBluePale}" Padding="16,14,0,14" CornerRadius="0,6,6,0" 
+                            <Border Grid.Row="1" Margin="0,6,0,0" Background="{StaticResource ChinaBluePale}" Padding="12,12,0,12" CornerRadius="0,6,6,0" 
                                 BorderBrush="{StaticResource ChinaBlue}" BorderThickness="3,0,0,0">
-                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,12,0">
                                     <TextBlock Text="{Binding VerInfo}" TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource TextSub}"/>
                                 </ScrollViewer>
                             </Border>
@@ -228,26 +474,33 @@
                         </StackPanel>
 
                         <!-- 步骤列表 -->
-                        <Border Grid.Row="1" Margin="0,6,0,0" Background="{StaticResource ChinaBluePale}" Padding="16,14,0,14" CornerRadius="0,6,6,0" 
-                                BorderBrush="{StaticResource ChinaBlue}" BorderThickness="3,0,0,0">
-                            <ScrollViewer x:Name="StepScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <Border Grid.Row="1" Margin="0,6,0,0" Background="{StaticResource ChinaBluePale}" Padding="12,12,0,12" CornerRadius="0,6,6,0" 
+                            BorderBrush="{StaticResource ChinaBlue}" BorderThickness="3,0,0,0">
+                            <ScrollViewer x:Name="StepScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,12,0">
                                 <ItemsControl x:Name="StepItemsControl" ItemsSource="{Binding Steps}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Grid Margin="0,4,0,4">
                                                 <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="20"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="28"/>
                                                     <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="40"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock 
                                                     Grid.Column="0" 
+                                                    Text="{Binding StepNumber}" 
+                                                    FontSize="11" 
+                                                    Foreground="{StaticResource TextSub}"
+                                                    HorizontalAlignment="Right"
+                                                    VerticalAlignment="Center"/>
+                                                <TextBlock 
+                                                    Grid.Column="1" 
                                                     Text="{Binding StatusIcon}" 
                                                     FontSize="14" 
                                                     Foreground="{Binding StatusColor}"
                                                     HorizontalAlignment="Center"
                                                     VerticalAlignment="Center"/>
-                                                <StackPanel Grid.Column="1" Margin="8,0">
+                                                <StackPanel Grid.Column="2">
                                                     <TextBlock 
                                                         Text="{Binding Title}" 
                                                         FontSize="12" 
@@ -259,14 +512,6 @@
                                                         Foreground="{Binding StatusColor}"
                                                         Margin="0,2,0,0"/>
                                                 </StackPanel>
-                                                <TextBlock 
-                                                    Grid.Column="2" 
-                                                    Text="{Binding StepNumber}" 
-                                                    FontSize="11" 
-                                                    Margin="0,0,8,0"
-                                                    Foreground="{StaticResource TextSub}"
-                                                    HorizontalAlignment="Right"
-                                                    VerticalAlignment="Center"/>
                                             </Grid>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
@@ -281,7 +526,7 @@
             <StackPanel Grid.Row="3" x:Name="ProgressArea" Margin="0">
                 <ProgressBar
                     x:Name="PbInfo"
-                    Height="4"
+                    Height="3"
                     Foreground="{StaticResource ChinaBlue}" 
                     Background="#E2E8F0"
                     BorderThickness="0"
@@ -290,16 +535,15 @@
             </StackPanel>
 
             <!-- 5. 底部按钮区 -->
-            <Border Grid.Row="4" BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" Background="#FAFBFC" Padding="16,16"
-                    CornerRadius="0,0,8,8">
+            <Border Grid.Row="4" BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" Background="#FAFBFC" Padding="16,16" CornerRadius="0,0,8,8">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel x:Name="SuccessStatus" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Notice}" Foreground="{StaticResource SuccessGreen}" 
-                                   FontSize="13" FontWeight="Medium" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding Notice}" Foreground="{Binding NoticeColor}" 
+                            FontSize="13" FontWeight="Medium" Margin="6,0,0,0" VerticalAlignment="Center"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">

@@ -70,7 +70,25 @@ namespace Com.Scm.Upgrade
         public string Notice
         {
             get => _notice;
-            set => SetProperty(ref _notice, value);
+            set
+            {
+                SetProperty(ref _notice, value);
+                OnPropertyChanged(nameof(NoticeColor));
+            }
+        }
+
+        public string NoticeColor
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(_notice))
+                    return "#7A8B9E";
+                if (_notice.Contains("失败") || _notice.Contains("错误"))
+                    return "#D94A4A";
+                if (_notice.Contains("完成"))
+                    return "#38A169";
+                return "#2A6BC6";
+            }
         }
 
         private double _percent;
@@ -252,6 +270,7 @@ namespace Com.Scm.Upgrade
                     Notice = "用户已取消升级";
                     LaterVisibility = Visibility.Collapsed;
                     StartVisibility = Visibility.Collapsed;
+                    CloseEnabled = true;
                     CloseVisibility = Visibility.Visible;
                 }
                 catch (Exception ex)
@@ -259,6 +278,7 @@ namespace Com.Scm.Upgrade
                     Notice = $"更新失败：{ex.Message}";
                     LaterVisibility = Visibility.Collapsed;
                     StartVisibility = Visibility.Collapsed;
+                    CloseEnabled = true;
                     CloseVisibility = Visibility.Visible;
                 }
                 finally

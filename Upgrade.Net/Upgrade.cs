@@ -208,6 +208,8 @@ namespace Com.Scm.Upgrade
                 var step = config.Steps[i];
                 var stepNumber = i + 1;
 
+                ProgressChanged?.Invoke(0, $"开始执行 {stepNumber}");
+
                 var action = GetAction(step.Option);
                 if (action == null)
                 {
