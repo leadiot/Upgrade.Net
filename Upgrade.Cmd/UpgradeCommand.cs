@@ -5,11 +5,11 @@ namespace Com.Scm.Upgrade
 {
     public class UpgradeCommand : UpgradeView
     {
-        public const int MAJOR = 1;
-        public const int MINOR = 1;
-        public const int PATCH = 3;
+        public const int MAJOR = 2;
+        public const int MINOR = 0;
+        public const int PATCH = 2;
         public const int BUILD = 3;
-        public const string RELEASE = "2026-07-14";
+        public const string RELEASE = "2026-07-15";
 
         public void Run()
         {
@@ -110,7 +110,7 @@ namespace Com.Scm.Upgrade
 
         public void LogStep(int step, int count, string message)
         {
-            Console.WriteLine($"   [消息] {message}");
+            Console.WriteLine($"[步骤{step}/{count}] " + message);
         }
 
         public void LogStepInfo(string info, string message)
@@ -125,12 +125,12 @@ namespace Com.Scm.Upgrade
 
         public void LogStepProgress(int progress, string message)
         {
-            Console.Write($"\r   [下载] {message}");
+            Console.Write($"\r   [进度] {message}");
         }
 
         public void LogStepStatus(int stepNumber, StepStatus status, string title, string message)
         {
-            Console.WriteLine($"   [消息] {message}");
+            //Console.WriteLine($"   [消息] {message}");
         }
 
         public void ResetProgress()

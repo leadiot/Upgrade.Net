@@ -356,40 +356,37 @@ namespace Com.Scm.Upgrade
 
         public void Log(string message)
         {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                Notice = message;
-                LogToFile(message);
-            });
+            Notice = message;
+            LogToFile(message);
         }
 
         public void LogStep(int step, int count, string message)
         {
-            throw new NotImplementedException();
+            Notice = $"[步骤{step}/{count}] " + message;
         }
 
         public void LogStepInfo(string info, string message)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            //Notice = message;
         }
 
         public void LogStepWait(int time, string message)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            //Notice = message;
+            //Notice = "升级进行中，请稍候……";
         }
 
         public void LogStepProgress(int progress, string message)
         {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                Percent = progress;
-                Notice = message;
-            });
+            Percent = progress;
+            Notice = message;
         }
 
         public void ResetProgress()
         {
-            throw new NotImplementedException();
+            Percent = 0;
         }
 
         public void LogStepStatus(int stepNumber, StepStatus status, string title, string message)

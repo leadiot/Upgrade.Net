@@ -419,6 +419,7 @@ namespace Com.Scm.Upgrade
                         }
                     }
 
+                    Log("");
                     return new UpgradeResult { Success = true, Message = $"目录压缩完成，共 {totalFiles} 个文件，大小：{FormatFileSize(new FileInfo(destPath).Length)}" };
                 }
                 else if (File.Exists(step.Source))
@@ -502,6 +503,7 @@ namespace Com.Scm.Upgrade
                     }
                 }
 
+                Log("");
                 return new UpgradeResult { Success = true, Message = $"解压完成，共 {totalEntries} 个文件" };
             }
             catch (Exception ex)
@@ -907,7 +909,7 @@ namespace Com.Scm.Upgrade
 
         private void LogStep(int step, int count, string message)
         {
-            Log($"[步骤{step}/{count}] " + message);
+            _View?.LogStep(step, count, message);
             //StepStatusChanged?.Invoke(step, 0, message);
         }
 
