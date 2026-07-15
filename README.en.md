@@ -4,21 +4,23 @@ An application upgrade program based on .NET, supporting both console and WPF ve
 
 ## Project Introduction
 
-Upgrade.Net is a lightweight Windows application upgrade solution that supports downloading update packages from remote servers and automatically completing version upgrades. The project includes two versions:
+Upgrade.Net is a lightweight Windows application upgrade solution that supports downloading update packages from remote servers and automatically completing version upgrades. The project adopts modular design, with core logic independent as a class library, supporting both console and WPF versions:
 
+- **Upgrade.Net**: Core class library, containing upgrade configuration, step execution, operation definitions, etc.
 - **Upgrade.Cmd**: Console version, suitable for background silent upgrade scenarios
 - **Upgrade.Wpf**: WPF UI version, providing visual upgrade progress and user interaction
 
 ## Features
 
 - **Custom Upgrade Steps**: Support defining dynamic upgrade step sequences via JSON configuration
-- **15 Operation Types**: Download, Command Execution, Zip, Unzip, Move, Copy, Create, Delete, Rename, etc.
+- **16 Operation Types**: Download, Command Execution, Launch, Zip, Unzip, Move, Copy, Create, Delete, Rename, etc.
 - **Wait Time**: Each step can be configured with wait time and countdown display
 - **Retry Mechanism**: Support configuring retry count and retry delay
 - **Auto Launch**: Support automatically launching the main program after upgrade, including `dotnet` command support
 - **Progress Display**: Real-time display of download, backup, and decompression progress and status information
 - **Pause/Cancel**: WPF version supports download pause, resume, and cancel functions
 - **Configuration File**: Support JSON format upgrade configuration file
+- **View Interface**: Through `UpgradeView` interface to achieve console and WPF view reuse
 
 ## Screenshots
 
@@ -33,12 +35,27 @@ Upgrade.Net is a lightweight Windows application upgrade solution that supports 
 
 ## Software Architecture
 
-### Console Version (Upgrade.Net)
+### Core Library (Upgrade.Net)
+
+- **Target Framework**: .NET 10.0
+- **Output Type**: Class Library
+- **Core Components**:
+  - `Upgrade`: Upgrade core logic, dynamic step execution engine
+  - `UpgradeView`: View interface, implementing console and WPF view reuse
+  - `UpgradeConfig`: Upgrade configuration management class
+  - `StepConfig`: Step configuration class and static factory methods
+  - `UpgradeAction`: Upgrade operation class (Strategy Pattern)
+  - `UpgradeOption`: Operation type enumeration (16 types)
+  - `UpgradeResult`: Operation execution result
+  - `StepStatus`: Step status enumeration
+
+### Console Version (Upgrade.Cmd)
 
 - **Target Framework**: .NET 10.0
 - **Output Type**: Console Application
 - **Network Requests**: HttpClient (static reuse)
 - **Data Exchange**: System.Text.Json
+- **Core File**: `UpgradeCommand.cs` (implements `UpgradeView` interface)
 
 ### WPF Version (Upgrade.Wpf)
 
@@ -48,20 +65,22 @@ Upgrade.Net is a lightweight Windows application upgrade solution that supports 
 - **Network Requests**: HttpClient (static reuse)
 - **Data Exchange**: System.Text.Json
 - **UI Style**: China Blue theme, borderless window design
+- **Core Component**: `UpgradeWindowViewModel` (implements `UpgradeView` interface)
 
 ### Core Modules
 
 | Module | Description |
 |--------|-------------|
-| UpgradeCommand | Upgrade command class, handling download, decompression, restart logic (Console version) |
-| UpgradeWindow | Upgrade window, handling download, decompression, restart logic (WPF version) |
+| Upgrade | Upgrade core logic class, dynamic step execution engine (library) |
+| UpgradeView | View interface, implementing console and WPF view decoupling |
+| UpgradeCommand | Console version view implementation |
+| UpgradeWindowViewModel | WPF version view model implementation |
 | SplashWindow | Splash screen window (WPF version) |
 | UpgradeConfig | Upgrade configuration management class |
-| StepConfig | Step configuration class |
+| StepConfig | Step configuration class and static factory methods |
 | UpgradeAction | Upgrade operation class (Strategy Pattern) |
 | UpgradeOption | Operation type enumeration |
-| ScmAppInfo | Application information DTO |
-| ScmVerInfo | Version information DTO |
+| UpgradeResult | Operation execution result class |
 
 ## Configuration File
 
@@ -92,7 +111,7 @@ Upgrade.Net is a lightweight Windows application upgrade solution that supports 
       "description": "Backup all files in current installation directory",
       "option": "Zip",
       "source": "your_app_install_path",
-      "file": "backup.zip",
+      "destination": "backup.zip",
       "waitTime": 0
     },
     {
@@ -108,13 +127,13 @@ Upgrade.Net is a lightweight Windows application upgrade solution that supports 
       "title": "Clean Up Temporary Files",
       "description": "Delete downloaded temporary files",
       "option": "DeleteDoc",
-      "file": "upgrade.zip",
+      "path": "upgrade.zip",
       "waitTime": 0
     },
     {
       "title": "Launch Application",
-      "description": "Launch the upgraded application",
-      "option": "Command",
+      "description": "Launch the upgraded application (without waiting for completion)",
+      "option": "Launch",
       "command": "dotnet MyApp.dll",
       "args": "--environment Production",
       "waitTime": 0
@@ -135,7 +154,7 @@ Upgrade.Net is a lightweight Windows application upgrade solution that supports 
 | newVersion | string | Yes | New version of the application |
 | autoStart | bool | No | Whether to start the application after upgrade, default false |
 | autoClose | bool | No | Whether to close the updater after upgrade, default false |
-| showSteps | bool | No | Whether to show upgrade step list, default true |
+| showSteps | bool | No | Whether to show upgrade step list, default false |
 | appInfo | string | No | Application description, supports longer text scrolling |
 | verInfo | string | No | Version upgrade description, supports longer text scrolling |
 
@@ -169,20 +188,20 @@ Each step contains the following properties:
 |----------------|-------------|---------------------|
 | None | No operation | None |
 | Download | Download file from URL | url, file |
-| Command | Execute command line | command, args(optional) |
-| Launch | Launch application after upgrade | command, args(optional) |
-| Zip | Compress file/directory | source, file |
+| Command | Execute command line (wait for completion) | command, args(optional), path(optional) |
+| Launch | Launch external program (without waiting for completion) | command, args(optional), path(optional) |
+| Zip | Compress file/directory | source, destination |
 | Unzip | Extract file | source, destination, overwrite(optional) |
-| MoveDir | Move directory | source, destination |
-| MoveDoc | Move file | source, destination |
+| MoveDir | Move directory | source, destination, overwrite(optional) |
+| MoveDoc | Move file | source, destination, overwrite(optional) |
 | CopyDir | Copy directory | source, destination, overwrite(optional) |
 | CopyDoc | Copy file | source, destination, overwrite(optional) |
 | CreateDir | Create directory | path |
-| CreateDoc | Create file | file |
+| CreateDoc | Create file | path, overwrite(optional) |
 | DeleteDir | Delete directory | path |
-| DeleteDoc | Delete file | file |
-| RenameDir | Rename directory | oldName, newName |
-| RenameDoc | Rename file | oldName, newName |
+| DeleteDoc | Delete file | path |
+| RenameDir | Rename directory | oldName, newName, overwrite(optional) |
+| RenameDoc | Rename file | oldName, newName, overwrite(optional) |
 
 ### Complete Example Configuration
 
@@ -198,7 +217,7 @@ Here is a complete configuration example with all operation types:
   "autoClose": false,
   "showSteps": true,
   "appInfo": "This is a .NET-based application upgrade tool supporting custom step configuration.",
-  "verInfo": "Version 2.0.0 update notes:\n1. Added custom step feature\n2. Supports 15 operation types\n3. Added retry mechanism\n4. Optimized UI layout",
+  "verInfo": "Version 2.0.0 update notes:\n1. Added custom step feature\n2. Supports 16 operation types\n3. Added retry mechanism\n4. Optimized UI layout",
   "steps": [
     {
       "title": "Create Temp Directory",
@@ -220,7 +239,7 @@ Here is a complete configuration example with all operation types:
       "description": "Backup all files in current installation directory",
       "option": "Zip",
       "source": "D:\\MyApp",
-      "file": "D:\\MyApp\\backup\\backup_20240101.zip",
+      "destination": "D:\\MyApp\\backup\\backup_20240101.zip",
       "waitTime": 3
     },
     {
@@ -242,6 +261,41 @@ Here is a complete configuration example with all operation types:
       "waitTime": 0
     },
     {
+      "title": "Copy Plugin Directory",
+      "description": "Copy plugin directory to installation directory",
+      "option": "CopyDir",
+      "source": "D:\\MyApp\\temp\\Plugins",
+      "destination": "D:\\MyApp\\Plugins",
+      "overwrite": true,
+      "waitTime": 0
+    },
+    {
+      "title": "Move Data Directory",
+      "description": "Move data directory to new location",
+      "option": "MoveDir",
+      "source": "D:\\MyApp\\data_old",
+      "destination": "D:\\MyApp\\data",
+      "overwrite": true,
+      "waitTime": 0
+    },
+    {
+      "title": "Move Old Log File",
+      "description": "Move old log file to backup directory",
+      "option": "MoveDoc",
+      "source": "D:\\MyApp\\app.log",
+      "destination": "D:\\MyApp\\backup\\app.log",
+      "overwrite": true,
+      "waitTime": 0
+    },
+    {
+      "title": "Create Config File",
+      "description": "Create new configuration file",
+      "option": "CreateDoc",
+      "path": "D:\\MyApp\\new_config.json",
+      "overwrite": true,
+      "waitTime": 0
+    },
+    {
       "title": "Rename Old File",
       "description": "Rename old version log file",
       "option": "RenameDoc",
@@ -250,8 +304,16 @@ Here is a complete configuration example with all operation types:
       "waitTime": 0
     },
     {
+      "title": "Rename Old Directory",
+      "description": "Rename old version directory",
+      "option": "RenameDir",
+      "oldName": "D:\\MyApp\\bin_old",
+      "newName": "D:\\MyApp\\bin_backup",
+      "waitTime": 0
+    },
+    {
       "title": "Execute Install Script",
-      "description": "Execute post-installation script",
+      "description": "Execute post-installation script (wait for completion)",
       "option": "Command",
       "command": "powershell",
       "args": "-ExecutionPolicy Bypass -File install.ps1",
@@ -263,7 +325,7 @@ Here is a complete configuration example with all operation types:
       "title": "Clean Up Temporary Files",
       "description": "Delete downloaded temporary files",
       "option": "DeleteDoc",
-      "file": "D:\\MyApp\\temp\\upgrade.zip",
+      "path": "D:\\MyApp\\temp\\upgrade.zip",
       "waitTime": 0
     },
     {
@@ -275,8 +337,8 @@ Here is a complete configuration example with all operation types:
     },
     {
       "title": "Launch Application",
-      "description": "Launch the upgraded application",
-      "option": "Command",
+      "description": "Launch the upgraded application (without waiting for completion)",
+      "option": "Launch",
       "command": "dotnet MyApp.dll",
       "args": "--environment Production",
       "waitTime": 0
@@ -341,37 +403,47 @@ Each step displays the following status during execution:
 
 ```
 Upgrade.Net/
-├── Upgrade.Net/              # Console Version
+├── Upgrade.Net/              # Core Library
 │   ├── Config/
-│   │   └── UpgradeConfig.cs  # Configuration Management (includes StepConfig, UpgradeOption, UpgradeAction)
-│   ├── Dto/
-│   │   ├── ScmAppInfo.cs     # Application Information
-│   │   └── ScmVerInfo.cs     # Version Information
+│   │   ├── UpgradeConfig.cs  # Upgrade Configuration Management Class
+│   │   ├── StepConfig.cs     # Step Configuration Class and Static Factory Methods
+│   │   ├── UpgradeOption.cs  # Operation Type Enumeration (16 types)
+│   │   ├── UpgradeAction.cs  # Upgrade Operation Class (Strategy Pattern)
+│   │   ├── UpgradeResult.cs  # Operation Execution Result Class
+│   │   └── StepStatus.cs     # Step Status Enumeration
+│   ├── Upgrade.cs            # Upgrade Core Logic (Dynamic Step Execution Engine)
+│   ├── UpgradeView.cs        # View Interface (Console/WPF Reuse)
+│   ├── app_offline.htm       # Application Offline Page Template
+│   └── Upgrade.Net.csproj    # Library Project File
+├── Upgrade.Cmd/              # Console Version
 │   ├── Resources/
 │   │   └── logo.ico          # Application Icon
 │   ├── Program.cs            # Program Entry
-│   ├── Upgrade.cs            # Upgrade Core Logic (dynamic step execution)
-│   ├── upgrade.json          # Configuration File
-│   └── Upgrade.Net.csproj    # Project File
+│   ├── UpgradeCommand.cs     # Console View Implementation (implements UpgradeView)
+│   ├── Upgrade.json          # Configuration File
+│   ├── Upgrade.Cmd.csproj    # Project File
+│   ├── build.bat             # Windows Build Script
+│   ├── build.ps1             # PowerShell Build Script
+│   └── build.sh              # Linux Build Script
 ├── Upgrade.Wpf/              # WPF Version
-│   ├── Config/
-│   │   └── UpgradeConfig.cs  # Configuration Management
-│   ├── Dto/
-│   │   ├── ScmAppInfo.cs     # Application Information
-│   │   └── ScmVerInfo.cs     # Version Information
 │   ├── Dvo/
-│   │   ├── MainWindowDvo.cs  # Data Binding Object
-│   │   └── StepItemDvo.cs    # Step List Item Data Model
+│   │   ├── StepItemDvo.cs    # Step List Item Data Model
+│   │   ├── ScmDvo.cs         # Data Binding Object
+│   │   └── RelayCommand.cs   # Command Binding Implementation
 │   ├── Resources/
 │   │   └── logo.ico          # Application Icon
 │   ├── App.xaml              # Application Entry (Resource Dictionary)
-│   ├── MainWindow.xaml       # Main Window
+│   ├── App.xaml.cs           # Application Code
 │   ├── UpgradeWindow.xaml    # Upgrade Window
-│   ├── UpgradeWindowViewModel.cs # Upgrade Window ViewModel
-│   ├── SplashWindow.xaml     # Splash Screen
-│   ├── Upgrade.cs            # Upgrade Core Logic (reuse Upgrade.Net)
-│   ├── upgrade.json          # Configuration File
-│   └── Upgrade.Wpf.csproj    # Project File
+│   ├── UpgradeWindow.xaml.cs # Upgrade Window Code
+│   ├── UpgradeWindowViewModel.cs # Upgrade Window ViewModel (implements UpgradeView)
+│   ├── Upgrade.json          # Configuration File
+│   ├── Upgrade.Wpf.csproj    # Project File
+│   ├── build.bat             # Windows Build Script
+│   ├── build.ps1             # PowerShell Build Script
+│   └── build.sh              # Linux Build Script
+├── release/                  # Release Version Directory
+├── screenshots/              # Screenshot Directory
 ├── .gitignore
 ├── LICENSE
 ├── README.md
