@@ -1040,13 +1040,4 @@ namespace Com.Scm.Upgrade
             _View?.LogStepProgress(progress, message);
         }
     }
-
-    public enum StepStatus
-    {
-        Pending,
-        Running,
-        Success,
-        Failed,
-        Skipped
-    }
 }

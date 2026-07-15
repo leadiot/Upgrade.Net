@@ -1,3 +1,4 @@
+using Com.Scm.Upgrade.Config;
 using Com.Scm.Upgrade.Dvo;
 
 namespace Com.Scm.Upgrade
