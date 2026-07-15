@@ -24,8 +24,12 @@ Upgrade.Net is a lightweight Windows application upgrade solution that supports 
 
 | Version | Screenshot |
 |---------|------------|
-| WPF Version | ![WPF Update Interface](screenshots/wpf_step_8.png) |
-| Console Version | ![Console Update Interface](screenshots/cmd_step_8.png) |
+| WPF Version | ![WPF Start Interface](screenshots/wpf_step_0.png) |
+| WPF Version | ![WPF Upgrade Interface](screenshots/wpf_step_1.png) |
+| WPF Version | ![WPF Complete Interface](screenshots/wpf_step_3.png) |
+| Console Version | ![Console Start Interface](screenshots/cmd_step_0.png) |
+| Console Version | ![Console Upgrade Interface](screenshots/cmd_step_1.png) |
+| Console Version | ![Console Complete Interface](screenshots/cmd_step_3.png) |
 
 ## Software Architecture
 
