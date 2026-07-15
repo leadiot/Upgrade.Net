@@ -485,31 +485,33 @@
                                                     <ColumnDefinition Width="28"/>
                                                     <ColumnDefinition Width="*"/>
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock 
-                                                    Grid.Column="0" 
-                                                    Text="{Binding StepNumber}" 
-                                                    FontSize="11" 
-                                                    Foreground="{StaticResource TextSub}"
-                                                    HorizontalAlignment="Right"
-                                                    VerticalAlignment="Center"/>
-                                                <TextBlock 
-                                                    Grid.Column="1" 
-                                                    Text="{Binding StatusIcon}" 
-                                                    FontSize="14" 
-                                                    Foreground="{Binding StatusColor}"
-                                                    HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center"/>
+                                                <Border Grid.Column="0" x:Name="NumberBorder" Width="18" Height="18" CornerRadius="9" Background="{Binding StatusBgColor}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0">
+                                                    <TextBlock 
+                                                            Text="{Binding StepNumber}" 
+                                                            FontSize="10" 
+                                                            FontWeight="Bold"
+                                                            Foreground="{Binding StatusNumberColor}"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"/>
+                                                </Border>
+                                                <TextBlock x:Name="StatusIconBlock"
+                                                        Grid.Column="1" 
+                                                        Text="{Binding StatusIcon}" 
+                                                        FontSize="14" 
+                                                        Foreground="{Binding StatusColor}"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"/>
                                                 <StackPanel Grid.Column="2">
                                                     <TextBlock 
-                                                        Text="{Binding Title}" 
-                                                        FontSize="12" 
-                                                        FontWeight="Medium"
-                                                        Foreground="{StaticResource TextMain}"/>
+                                                            Text="{Binding Title}" 
+                                                            FontSize="12" 
+                                                            FontWeight="Medium"
+                                                            Foreground="{StaticResource TextMain}"/>
                                                     <TextBlock 
-                                                        Text="{Binding Message}" 
-                                                        FontSize="11" 
-                                                        Foreground="{Binding StatusColor}"
-                                                        Margin="0,2,0,0"/>
+                                                            Text="{Binding Message}" 
+                                                            FontSize="11" 
+                                                            Foreground="{Binding StatusColor}"
+                                                            Margin="0,2,0,0"/>
                                                 </StackPanel>
                                             </Grid>
                                         </DataTemplate>
