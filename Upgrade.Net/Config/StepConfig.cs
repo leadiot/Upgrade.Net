@@ -2,6 +2,7 @@
 {
     public class StepConfig
     {
+        #region 公共属性
         /// <summary>
         /// 步骤标题
         /// </summary>
@@ -36,7 +37,9 @@
         /// 重试等待时间（单位毫秒）
         /// </summary>
         public int RetryDelay { get; set; } = 1000;
+        #endregion
 
+        #region 扩展属性
         /// <summary>
         /// 来源文件或路径
         /// </summary>
@@ -86,6 +89,7 @@
         /// 是否覆盖目标
         /// </summary>
         public bool Overwrite { get; set; } = true;
+        #endregion
 
         /// <summary>
         /// 下载步骤
