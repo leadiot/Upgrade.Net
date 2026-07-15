@@ -97,18 +97,19 @@
         /// <param name="url">下载链接</param>
         /// <param name="file">保存路径</param>
         /// <returns>步骤配置</returns>
-        public static StepConfig NewDownloadStep(string url, string file)
+        public static StepConfig NewDownloadStep(string title, string url, string file)
         {
             return new StepConfig
             {
                 Option = UpgradeOption.Download,
+                Title = title,
                 Url = url,
                 File = file
             };
         }
 
         /// <summary>
-        /// 命令步骤
+        /// 命令步骤（等待执行完成）
         /// </summary>
         /// <param name="command">要执行的命令</param>
         /// <param name="args">命令参数</param>
@@ -126,16 +127,35 @@
         }
 
         /// <summary>
+        /// 启动程序步骤（不等待执行完成）
+        /// </summary>
+        /// <param name="command">要启动的程序路径</param>
+        /// <param name="args">程序参数</param>
+        /// <param name="path">工作目录（可选，默认为当前目录）</param>
+        /// <returns>步骤配置</returns>
+        public static StepConfig NewLaunchStep(string command, string args, string path = null)
+        {
+            return new StepConfig
+            {
+                Option = UpgradeOption.Launch,
+                Command = command,
+                Args = args,
+                Path = path,
+            };
+        }
+
+        /// <summary>
         /// 压缩步骤
         /// </summary>
         /// <param name="source">源文件或目录路径</param>
         /// <param name="destination">目标压缩文件路径</param>
         /// <returns>步骤配置</returns>
-        public static StepConfig NewZipStep(string source, string destination)
+        public static StepConfig NewZipStep(string title, string source, string destination)
         {
             return new StepConfig
             {
                 Option = UpgradeOption.Zip,
+                Title = title,
                 Source = source,
                 Destination = destination
             };
@@ -148,11 +168,12 @@
         /// <param name="destination">解压目标目录</param>
         /// <param name="overwrite">是否覆盖已存在的文件（默认true）</param>
         /// <returns>步骤配置</returns>
-        public static StepConfig NewUnzipStep(string source, string destination, bool overwrite = true)
+        public static StepConfig NewUnzipStep(string title, string source, string destination, bool overwrite = true)
         {
             return new StepConfig
             {
                 Option = UpgradeOption.Unzip,
+                Title = title,
                 Source = source,
                 Destination = destination,
                 Overwrite = overwrite
@@ -166,11 +187,12 @@
         /// <param name="destination">目标目录路径</param>
         /// <param name="overwrite">是否覆盖已存在的文件（默认true）</param>
         /// <returns>步骤配置</returns>
-        public static StepConfig NewMoveDirStep(string source, string destination, bool overwrite = true)
+        public static StepConfig NewMoveDirStep(string title, string source, string destination, bool overwrite = true)
         {
             return new StepConfig
             {
                 Option = UpgradeOption.MoveDir,
+                Title = title,
                 Source = source,
                 Destination = destination,
                 Overwrite = overwrite
@@ -184,11 +206,12 @@
         /// <param name="destination">目标文件路径</param>
         /// <param name="overwrite">是否覆盖已存在的文件（默认true）</param>
         /// <returns>步骤配置</returns>
-        public static StepConfig NewMoveDocStep(string source, string destination, bool overwrite = true)
+        public static StepConfig NewMoveDocStep(string title, string source, string destination, bool overwrite = true)
         {
             return new StepConfig
             {
                 Option = UpgradeOption.MoveDoc,
+                Title = title,
                 Source = source,
                 Destination = destination,
                 Overwrite = overwrite
@@ -202,11 +225,12 @@
         /// <param name="destination">目标目录路径</param>
         /// <param name="overwrite">是否覆盖已存在的文件（默认true）</param>
         /// <returns>步骤配置</returns>
-        public static StepConfig NewCopyDirStep(string source, string destination, bool overwrite = true)
+        public static StepConfig NewCopyDirStep(string title, string source, string destination, bool overwrite = true)
         {
             return new StepConfig
             {
                 Option = UpgradeOption.CopyDir,
+                Title = title,
                 Source = source,
                 Destination = destination,
                 Overwrite = overwrite
@@ -220,11 +244,12 @@
         /// <param name="destination">目标文件路径</param>
         /// <param name="overwrite">是否覆盖已存在的文件（默认true）</param>
         /// <returns>步骤配置</returns>
-        public static StepConfig NewCopyDocStep(string source, string destination, bool overwrite = true)
+        public static StepConfig NewCopyDocStep(string title, string source, string destination, bool overwrite = true)
         {
             return new StepConfig
             {
                 Option = UpgradeOption.CopyDoc,
+                Title = title,
                 Source = source,
                 Destination = destination,
                 Overwrite = overwrite
@@ -236,11 +261,12 @@
         /// </summary>
         /// <param name="path">目录路径</param>
         /// <returns>步骤配置</returns>
-        public static StepConfig NewCreateDirStep(string path)
+        public static StepConfig NewCreateDirStep(string title, string path)
         {
             return new StepConfig
             {
                 Option = UpgradeOption.CreateDir,
+                Title = title,
                 Path = path
             };
         }
@@ -251,11 +277,12 @@
         /// <param name="path">文件路径</param>
         /// <param name="overwrite">文件已存在时是否覆盖（默认true）</param>
         /// <returns>步骤配置</returns>
-        public static StepConfig NewCreateDocStep(string path, bool overwrite = true)
+        public static StepConfig NewCreateDocStep(string title, string path, bool overwrite = true)
         {
             return new StepConfig
             {
                 Option = UpgradeOption.CreateDoc,
+                Title = title,
                 Path = path,
                 Overwrite = overwrite
             };
@@ -266,11 +293,12 @@
         /// </summary>
         /// <param name="path">目录路径</param>
         /// <returns>步骤配置</returns>
-        public static StepConfig NewDeleteDirStep(string path)
+        public static StepConfig NewDeleteDirStep(string title, string path)
         {
             return new StepConfig
             {
                 Option = UpgradeOption.DeleteDir,
+                Title = title,
                 Path = path
             };
         }
@@ -280,11 +308,12 @@
         /// </summary>
         /// <param name="path">文件路径</param>
         /// <returns>步骤配置</returns>
-        public static StepConfig NewDeleteDocStep(string path)
+        public static StepConfig NewDeleteDocStep(string title, string path)
         {
             return new StepConfig
             {
                 Option = UpgradeOption.DeleteDoc,
+                Title = title,
                 Path = path
             };
         }
@@ -296,11 +325,12 @@
         /// <param name="newName">新目录路径</param>
         /// <param name="overwrite">新目录已存在时是否覆盖（默认true）</param>
         /// <returns>步骤配置</returns>
-        public static StepConfig NewRenameDirStep(string oldName, string newName, bool overwrite = true)
+        public static StepConfig NewRenameDirStep(string title, string oldName, string newName, bool overwrite = true)
         {
             return new StepConfig
             {
                 Option = UpgradeOption.RenameDir,
+                Title = title,
                 OldName = oldName,
                 NewName = newName,
                 Overwrite = overwrite
@@ -314,11 +344,12 @@
         /// <param name="newName">新文件路径</param>
         /// <param name="overwrite">新文件已存在时是否覆盖（默认true）</param>
         /// <returns>步骤配置</returns>
-        public static StepConfig NewRenameDocStep(string oldName, string newName, bool overwrite = true)
+        public static StepConfig NewRenameDocStep(string title, string oldName, string newName, bool overwrite = true)
         {
             return new StepConfig
             {
                 Option = UpgradeOption.RenameDoc,
+                Title = title,
                 OldName = oldName,
                 NewName = newName,
                 Overwrite = overwrite

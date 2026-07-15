@@ -1,10 +1,11 @@
-﻿namespace Com.Scm.Upgrade.Config
+namespace Com.Scm.Upgrade.Config
 {
     public enum UpgradeOption
     {
         None,
         Download,
         Command,
+        Launch,
         Zip,
         Unzip,
         MoveDir,

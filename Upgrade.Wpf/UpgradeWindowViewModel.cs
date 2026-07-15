@@ -258,8 +258,13 @@ namespace Com.Scm.Upgrade
                     }
                     else
                     {
-                        Notice = "升级完成，3秒后自动关闭...";
-                        await Task.Delay(3000);
+                        var step = 3;
+                        while (step > 0)
+                        {
+                            Notice = $"升级完成，{step}秒后自动关闭...";
+                            step -= 1;
+                            await Task.Delay(1000);
+                        }
                         Application.Current.Dispatcher.Invoke(() => Application.Current.Shutdown());
                     }
                 }
@@ -324,6 +329,7 @@ namespace Com.Scm.Upgrade
         {
             UpgradeOption.Download => "下载文件",
             UpgradeOption.Command => "执行命令",
+            UpgradeOption.Launch => "执行程序",
             UpgradeOption.Zip => "压缩文件",
             UpgradeOption.Unzip => "解压文件",
             UpgradeOption.MoveDir => "移动目录",

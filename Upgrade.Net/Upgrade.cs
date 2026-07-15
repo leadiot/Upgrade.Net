@@ -37,8 +37,16 @@ namespace Com.Scm.Upgrade
             {
                 Option = UpgradeOption.Command,
                 Title = "执行命令",
-                Description = "执行指定的系统命令",
+                Description = "执行指定的系统命令，等待命令执行完成",
                 Execute = ExecuteCommand
+            };
+
+            _Actions[UpgradeOption.Launch] = new UpgradeAction
+            {
+                Option = UpgradeOption.Launch,
+                Title = "启动程序",
+                Description = "启动外部程序，不等待执行完成",
+                Execute = ExecuteLaunch
             };
 
             _Actions[UpgradeOption.Zip] = new UpgradeAction
@@ -406,6 +414,45 @@ namespace Com.Scm.Upgrade
             catch (Exception ex)
             {
                 return new UpgradeResult { Success = false, Message = $"命令执行异常：{ex.Message}" };
+            }
+        }
+
+        private UpgradeResult ExecuteLaunch(StepConfig step)
+        {
+            if (string.IsNullOrWhiteSpace(step.Command))
+            {
+                return new UpgradeResult { Success = false, Message = "命令为空" };
+            }
+
+            try
+            {
+                LogStepInfo("启动", $"程序：{step.Command} {step.Args ?? ""}");
+
+                var parts = ParseCommand(step.Command);
+                var exePath = parts.Item1;
+                var exeArgs = parts.Item2;
+
+                var processStartInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = exePath,
+                    Arguments = $"{exeArgs} {step.Args ?? string.Empty}".Trim(),
+                    WorkingDirectory = string.IsNullOrEmpty(step.Path) ? AppDomain.CurrentDomain.BaseDirectory : step.Path,
+                    UseShellExecute = true
+                };
+
+                var process = System.Diagnostics.Process.Start(processStartInfo);
+                if (process != null)
+                {
+                    return new UpgradeResult { Success = true, Message = $"程序启动成功，进程ID：{process.Id}" };
+                }
+                else
+                {
+                    return new UpgradeResult { Success = false, Message = "进程启动失败" };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new UpgradeResult { Success = false, Message = $"启动程序异常：{ex.Message}" };
             }
         }
 
