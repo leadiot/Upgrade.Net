@@ -404,9 +404,12 @@ namespace Com.Scm.Upgrade
                     var step = Steps[stepNumber - 1];
                     //step.Title = title;
                     step.Message = message;
-                    step.Status = StepStatus.Running;
+                    step.Status = status;
 
-                    ScrollToStepRequested?.Invoke(stepNumber - 1);
+                    if (status == StepStatus.Running)
+                    {
+                        ScrollToStepRequested?.Invoke(stepNumber - 1);
+                    }
                 }
             });
         }

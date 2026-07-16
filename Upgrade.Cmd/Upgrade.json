@@ -1,11 +1,12 @@
 {
   "title": "Upgrade.Cmd 完整升级流程测试",
-  "autoStart": true,
-  "autoClose": false,
   "oldVersion": "1.0.0",
   "newVersion": "2.0.0",
   "appInfo": "完整升级流程测试应用 - 测试所有操作类型及等待时间",
   "verInfo": "测试所有升级操作类型及等待时间\n1、CreateDir - 创建目录\n2、CreateDoc - 创建文件\n3、CopyDoc - 复制文件\n4、CopyDir - 复制目录\n5、MoveDoc - 移动文件\n6、MoveDir - 移动目录\n7、RenameDoc - 重命名文件\n8、RenameDir - 重命名目录\n9、Zip - 压缩文件\n10、Unzip - 解压文件\n11、DeleteDoc - 删除文件\n12、DeleteDir - 删除目录\n13、Download - 下载文件\n14、Upload - 上传文件\n15、Command - 执行命令\n等待时间测试：0秒、1秒、2秒、3秒",
+  "autoStart": true,
+  "autoClose": false,
+  "logToFile": true,
   "steps": [
     {
       "option": "CreateDir",
@@ -165,10 +166,19 @@
       "name": "下载测试文件",
       "description": "下载公开的测试文件到本地",
       "waitTime": 0,
-      "url": "https://download.sqlark.com/fullPackage/Windows/408830/SQLark_V3.10_Win_x86_64.zip",
-      "file": "D:\\temp\\upgrade_test\\SQLark_V3.10_Win_x86_64.zip",
+      "url": "http://www.c-scm.net/download/upgrade_demo.zip",
+      "file": "D:\\temp\\upgrade_test\\demo.zip",
       "retryCount": 2,
       "retryDelay": 3000
+    },
+    {
+      "option": "Unzip",
+      "name": "解压测试文件",
+      "description": "将demo.zip解压到upgrade_test目录",
+      "waitTime": 1,
+      "source": "D:\\temp\\upgrade_test\\demo.zip",
+      "destination": "D:\\temp\\upgrade_test",
+      "overwrite": true
     },
     {
       "option": "Upload",
@@ -184,10 +194,10 @@
     {
       "option": "Launch",
       "name": "打开记事本",
-      "description": "打开test_file_1.txt文件",
+      "description": "打开renamed_file.txt文件",
       "waitTime": 1,
       "command": "notepad",
-      "args": "D:\\temp\\upgrade_test\\renamed_a\\test_file_1.txt"
+      "args": "D:\\temp\\upgrade_test\\demo\\demo.txt"
     }
   ]
 }

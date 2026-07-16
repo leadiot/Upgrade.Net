@@ -1271,7 +1271,7 @@ namespace Com.Scm.Upgrade
         /// 记录日志到文件
         /// </summary>
         /// <param name="message"></param>
-        private async void LogToFile(string message)
+        private void LogToFile(string message)
         {
             if (!_Config.LogToFile)
             {
@@ -1287,7 +1287,8 @@ namespace Com.Scm.Upgrade
             }
 
             var time = now.ToString("yyyy-MM-dd HH:mm:ss");
-            await _writer.WriteLineAsync($"{time} {message}");
+            //await _writer.WriteLineAsync($"{time} {message}");
+            _writer.WriteLine($"{time} {message}");
         }
         #endregion
 
