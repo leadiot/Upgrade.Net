@@ -1,5 +1,7 @@
 # Upgrade.Net
 
+[![中文](https://img.shields.io/badge/lang-中文-green)](README.md) [![English](https://img.shields.io/badge/lang-English-blue)](README.en.md)
+
 An application upgrade program based on .NET, supporting both console and WPF versions, providing complete download, backup, decompression, and launch processes with custom upgrade step configuration.
 
 ## Project Introduction

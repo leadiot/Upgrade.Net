@@ -1,5 +1,7 @@
 # Upgrade.Net
 
+[![中文](https://img.shields.io/badge/lang-中文-green)](README.md) [![English](https://img.shields.io/badge/lang-English-blue)](README.en.md)
+
 基于 .NET 开发的应用程序升级程序，支持控制台和 WPF 两种版本，提供完整的下载、备份、解压、启动流程，支持自定义升级步骤配置。
 
 ## 项目简介
