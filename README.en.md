@@ -13,7 +13,7 @@ Upgrade.Net is a lightweight Windows application upgrade solution that supports 
 ## Features
 
 - **Custom Upgrade Steps**: Support defining dynamic upgrade step sequences via JSON configuration
-- **16 Operation Types**: Download, Command Execution, Launch, Zip, Unzip, Move, Copy, Create, Delete, Rename, etc.
+- **17 Operation Types**: Download, Upload, Command Execution, Launch, Zip, Unzip, Move, Copy, Create, Delete, Rename, etc.
 - **Wait Time**: Each step can be configured with wait time and countdown display
 - **Retry Mechanism**: Support configuring retry count and retry delay
 - **Auto Launch**: Support automatically launching the main program after upgrade, including `dotnet` command support
@@ -45,7 +45,7 @@ Upgrade.Net is a lightweight Windows application upgrade solution that supports 
   - `UpgradeConfig`: Upgrade configuration management class
   - `StepConfig`: Step configuration class and static factory methods
   - `UpgradeAction`: Upgrade operation class (Strategy Pattern)
-  - `UpgradeOption`: Operation type enumeration (16 types)
+  - `UpgradeOption`: Operation type enumeration (17 types)
   - `UpgradeResult`: Operation execution result
   - `StepStatus`: Step status enumeration
 
@@ -95,6 +95,7 @@ Upgrade.Net is a lightweight Windows application upgrade solution that supports 
   "autoStart": true,
   "autoClose": false,
   "showSteps": true,
+  "logToFile": false,
   "appInfo": "your_app_description",
   "verInfo": "your_app_version_info",
   "steps": [
@@ -105,6 +106,14 @@ Upgrade.Net is a lightweight Windows application upgrade solution that supports 
       "url": "https://example.com/upgrade.zip",
       "file": "upgrade.zip",
       "waitTime": 5
+    },
+    {
+      "title": "Upload Log File",
+      "description": "Upload application log to server",
+      "option": "Upload",
+      "url": "https://example.com/api/upload",
+      "file": "app.log",
+      "waitTime": 0
     },
     {
       "title": "Backup Existing Files",
@@ -155,6 +164,7 @@ Upgrade.Net is a lightweight Windows application upgrade solution that supports 
 | autoStart | bool | No | Whether to start the application after upgrade, default false |
 | autoClose | bool | No | Whether to close the updater after upgrade, default false |
 | showSteps | bool | No | Whether to show upgrade step list, default false |
+| logToFile | bool | No | Whether to log to file, default false |
 | appInfo | string | No | Application description, supports longer text scrolling |
 | verInfo | string | No | Version upgrade description, supports longer text scrolling |
 
@@ -166,7 +176,7 @@ Each step contains the following properties:
 |-------|------|----------|-------------|
 | title | string | Yes | Step title, displayed in the step list |
 | description | string | No | Step description, detailed explanation of the step's purpose |
-| option | string | Yes | Operation type, see UpgradeOption enumeration |
+| option | string | Yes | Operation type, see UpgradeOption enumeration, supports string enum names (e.g., "Download", "Upload") or numeric values |
 | waitTime | int | No | Wait time after step completion (seconds), supports countdown display, default 0 |
 | continueOnError | bool | No | Whether to continue with subsequent steps when this step fails, default false |
 | retryCount | int | No | Number of retries, default 0 |
@@ -188,6 +198,7 @@ Each step contains the following properties:
 |----------------|-------------|---------------------|
 | None | No operation | None |
 | Download | Download file from URL | url, file |
+| Upload | Upload local file to specified URL | url, file |
 | Command | Execute command line (wait for completion) | command, args(optional), path(optional) |
 | Launch | Launch external program (without waiting for completion) | command, args(optional), path(optional) |
 | Zip | Compress file/directory | source, destination |
@@ -216,8 +227,9 @@ Here is a complete configuration example with all operation types:
   "autoStart": true,
   "autoClose": false,
   "showSteps": true,
+  "logToFile": true,
   "appInfo": "This is a .NET-based application upgrade tool supporting custom step configuration.",
-  "verInfo": "Version 2.0.0 update notes:\n1. Added custom step feature\n2. Supports 16 operation types\n3. Added retry mechanism\n4. Optimized UI layout",
+  "verInfo": "Version 2.0.0 update notes:\n1. Added custom step feature\n2. Supports 17 operation types (added Upload function)\n3. Added retry mechanism\n4. Optimized UI layout\n5. option field supports string enum names\n6. Added logToFile configuration property for logging to file",
   "steps": [
     {
       "title": "Create Temp Directory",
@@ -406,13 +418,16 @@ Upgrade.Net/
 ├── Upgrade.Net/              # Core Library
 │   ├── Config/
 │   │   ├── UpgradeConfig.cs  # Upgrade Configuration Management Class
-│   │   ├── StepConfig.cs     # Step Configuration Class and Static Factory Methods
-│   │   ├── UpgradeOption.cs  # Operation Type Enumeration (16 types)
-│   │   ├── UpgradeAction.cs  # Upgrade Operation Class (Strategy Pattern)
-│   │   ├── UpgradeResult.cs  # Operation Execution Result Class
-│   │   └── StepStatus.cs     # Step Status Enumeration
+│   │   └── StepConfig.cs     # Step Configuration Class and Static Factory Methods
+│   ├── Resources/
+│   │   ├── logo.ico          # Application Icon
+│   │   └── logo128.png       # Icon File (NuGet Package Icon)
 │   ├── Upgrade.cs            # Upgrade Core Logic (Dynamic Step Execution Engine)
 │   ├── UpgradeView.cs        # View Interface (Console/WPF Reuse)
+│   ├── UpgradeAction.cs      # Upgrade Operation Class (Strategy Pattern)
+│   ├── UpgradeOption.cs      # Operation Type Enumeration (17 types)
+│   ├── UpgradeResult.cs      # Operation Execution Result Class
+│   ├── StepStatus.cs         # Step Status Enumeration
 │   ├── app_offline.htm       # Application Offline Page Template
 │   └── Upgrade.Net.csproj    # Library Project File
 ├── Upgrade.Cmd/              # Console Version
