@@ -134,7 +134,7 @@ namespace Com.Scm.Upgrade.Config
         /// <param name="args">命令参数</param>
         /// <param name="path">工作目录（可选，默认为当前目录）</param>
         /// <returns>步骤配置</returns>
-        public static StepConfig NewCommandStep(string title, string command, string args, string path = null)
+        public static StepConfig NewCommandStep(string title, string command, string path, string args = null)
         {
             return new StepConfig
             {
@@ -153,7 +153,7 @@ namespace Com.Scm.Upgrade.Config
         /// <param name="args">程序参数</param>
         /// <param name="path">工作目录（可选，默认为当前目录）</param>
         /// <returns>步骤配置</returns>
-        public static StepConfig NewLaunchStep(string title, string command, string args, string path = null)
+        public static StepConfig NewLaunchStep(string title, string command, string path, string args = null)
         {
             return new StepConfig
             {
