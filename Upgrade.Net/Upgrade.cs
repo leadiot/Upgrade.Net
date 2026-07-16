@@ -6,10 +6,10 @@ namespace Com.Scm.Upgrade
     public class Upgrade
     {
         public const int MAJOR = 1;
-        public const int MINOR = 0;
-        public const int PATCH = 1;
-        public const int BUILD = 1;
-        public const string RELEASE = "2026-07-15";
+        public const int MINOR = 1;
+        public const int PATCH = 2;
+        public const int BUILD = 2;
+        public const string RELEASE = "2026-07-16";
 
         private static readonly HttpClient _HttpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
         private readonly Dictionary<UpgradeOption, UpgradeAction> _Actions = new Dictionary<UpgradeOption, UpgradeAction>();

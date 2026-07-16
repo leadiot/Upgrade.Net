@@ -6,7 +6,7 @@
 		<Nullable>disable</Nullable>
 		<RootNamespace>Com.Scm.Upgrade</RootNamespace>
 		<PackageId>Com.Scm.Upgrade</PackageId>
-		<Version>1.0.1</Version>
+		<Version>1.1.2</Version>
 		<Authors>SCM Team</Authors>
 		<Company>SCM</Company>
 		<Description>基于 .NET 开发的应用程序升级程序核心类库，支持自定义升级步骤配置、16种操作类型、重试机制、等待时间等功能。</Description>

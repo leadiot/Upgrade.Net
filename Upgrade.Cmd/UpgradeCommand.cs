@@ -5,11 +5,11 @@ namespace Com.Scm.Upgrade
     public class UpgradeCommand : UpgradeView
     {
         public const int MAJOR = 2;
-        public const int MINOR = 0;
-        public const int PATCH = 2;
-        public const int BUILD = 3;
+        public const int MINOR = 1;
+        public const int PATCH = 3;
+        public const int BUILD = 4;
 
-        public const string RELEASE_DATE = "2026-07-15";
+        public const string RELEASE_DATE = "2026-07-16";
 
         private UpgradeConfig _Config;
         private Upgrade _Upgrade;

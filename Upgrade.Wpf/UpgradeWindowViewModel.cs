@@ -12,11 +12,11 @@ namespace Com.Scm.Upgrade
     public class UpgradeWindowViewModel : ScmDvo, UpgradeView
     {
         public const int MAJOR = 2;
-        public const int MINOR = 2;
-        public const int PATCH = 3;
-        public const int BUILD = 4;
+        public const int MINOR = 3;
+        public const int PATCH = 4;
+        public const int BUILD = 5;
 
-        public const string RELEASE_DATE = "2026-07-15";
+        public const string RELEASE_DATE = "2026-07-16";
 
         #region 视图属性
         private ImageSource _icon;
