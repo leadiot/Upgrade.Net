@@ -1,4 +1,4 @@
-﻿namespace Com.Scm.Upgrade.Config
+﻿namespace Com.Scm.Upgrade
 {
     public class UpgradeResult
     {

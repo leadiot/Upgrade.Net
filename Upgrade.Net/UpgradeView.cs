@@ -1,5 +1,3 @@
-using Com.Scm.Upgrade.Config;
-
 namespace Com.Scm.Upgrade
 {
     public interface UpgradeView

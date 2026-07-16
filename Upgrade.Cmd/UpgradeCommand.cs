@@ -8,84 +8,87 @@ namespace Com.Scm.Upgrade
         public const int MINOR = 0;
         public const int PATCH = 2;
         public const int BUILD = 3;
-        public const string RELEASE = "2026-07-15";
+
+        public const string RELEASE_DATE = "2026-07-15";
+
+        private UpgradeConfig _Config;
+        private Upgrade _Upgrade;
 
         public void Run()
         {
+            ShowHead();
+
             try
             {
-                ShowHead();
-
-                var config = UpgradeConfig.Load();
-                if (config == null)
-                {
-                    Console.WriteLine("[错误] 配置文件 upgrade.json 不存在，结束升级任务");
-                    Console.ReadKey();
-                    return;
-                }
-
-                if (config == null)
+                _Config = UpgradeConfig.Load();
+                if (_Config == null)
                 {
                     Log("[错误] 配置对象为空，结束升级任务");
+                    Console.ReadKey();
                     return;
                 }
 
-                if (!string.IsNullOrEmpty(config.Title))
-                {
-                    Log($"[信息] 应用名称：{config.Title}");
-                }
+                Log($"[信息] 应用名称：{_Config.Title}");
+                Log($"[信息] 版本升级：{_Config.OldVersion} -> {_Config.NewVersion}");
 
-                if (!string.IsNullOrEmpty(config.OldVersion) && !string.IsNullOrEmpty(config.NewVersion))
-                {
-                    Log($"[信息] 版本升级：{config.OldVersion} -> {config.NewVersion}");
-                }
+                Log("[信息] 应用简介：");
+                Log(_Config.AppInfo);
 
-                if (!string.IsNullOrEmpty(config.VerInfo))
-                {
-                    Log("[信息] 升级说明：");
-                    Log(config.VerInfo);
-                }
+                Log("[信息] 升级事项：");
+                Log(_Config.VerInfo);
 
-                Log("");
+                LogNewLine();
 
-                var upgrade = new Upgrade(this);
-
-                if (!config.AutoStart)
-                {
-                    Console.Write("是否要开始执行升级【y/n】：");
-                    var text = Console.ReadLine() ?? "";
-                    text = text.Trim();
-                    if (text.ToUpper() != "Y")
-                    {
-                        return;
-                    }
-                }
-
-                upgrade.Start(config);
+                Start();
 
                 ShowFooter();
-
-                if (!config.AutoClose)
-                {
-                    Console.WriteLine("");
-                    Console.WriteLine("按任意键退出应用...");
-                    Console.ReadKey();
-                }
-                else
-                {
-                    Console.WriteLine("");
-                    Console.WriteLine("升级程序即将退出...");
-                    Thread.Sleep(3000);
-                }
             }
             catch (Exception ex)
             {
-                ShowFooter();
+                Console.WriteLine("");
                 Console.WriteLine($"升级失败：{ex.Message}");
+            }
+
+            ShowFooter();
+
+            if (!_Config.AutoClose)
+            {
+                Console.WriteLine("");
+                Console.WriteLine("按任意键退出应用...");
                 Console.ReadKey();
             }
+            else
+            {
+                Console.WriteLine("");
+                Console.WriteLine("升级程序即将退出...");
+                Thread.Sleep(3000);
+            }
+
+            _Upgrade.Dispose();
         }
 
+        private void Start()
+        {
+            _Upgrade = new Upgrade(this);
+
+            if (!_Config.AutoStart)
+            {
+                Console.Write("是否要开始执行升级【y/n】：");
+                var text = Console.ReadLine() ?? "";
+                text = text.Trim();
+                if (text.ToUpper() != "Y")
+                {
+                    return;
+                }
+            }
+
+            _Upgrade.Start(_Config);
+        }
+
+        #region 工具方法
+        /// <summary>
+        /// 显示头部信息
+        /// </summary>
         private void ShowHead()
         {
             Log("═══════════════════════════════════════════════");
@@ -94,14 +97,19 @@ namespace Com.Scm.Upgrade
             Log("");
         }
 
+        /// <summary>
+        /// 显示结束信息
+        /// </summary>
         private void ShowFooter()
         {
-            Log("");
+            LogNewLine();
             Log("═══════════════════════════════════════════════");
             Log("            升级任务完成");
             Log("═══════════════════════════════════════════════");
         }
+        #endregion
 
+        #region 接口实现
         public void Log(string message)
         {
             Console.WriteLine(message);
@@ -129,6 +137,7 @@ namespace Com.Scm.Upgrade
 
         public void LogStepStatus(int step, StepStatus status, string message)
         {
+            // 无需处理
             //Console.WriteLine($"   [消息] {message}");
         }
 
@@ -139,6 +148,8 @@ namespace Com.Scm.Upgrade
 
         public void ResetProgress()
         {
+            // 无需处理
         }
+        #endregion
     }
 }

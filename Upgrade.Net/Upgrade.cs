@@ -13,12 +13,15 @@ namespace Com.Scm.Upgrade
 
         private static readonly HttpClient _HttpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
         private readonly Dictionary<UpgradeOption, UpgradeAction> _Actions = new Dictionary<UpgradeOption, UpgradeAction>();
+        private StreamWriter _writer;
 
-        public UpgradeView _View;
+        private UpgradeView _View;
+        private UpgradeConfig _Config;
 
         public Upgrade(UpgradeView view)
         {
             _View = view;
+
             InitializeActions();
         }
 
@@ -153,8 +156,15 @@ namespace Com.Scm.Upgrade
             };
         }
 
+        /// <summary>
+        /// 执行升级（异步）
+        /// </summary>
+        /// <param name="config"></param>
+        /// <returns></returns>
         public async Task StartAsync(UpgradeConfig config)
         {
+            _Config = config;
+
             if (config.Steps == null || config.Steps.Count < 1)
             {
                 Log("[警告] 未配置升级步骤，请在 upgrade.json 中配置 Steps");
@@ -164,16 +174,26 @@ namespace Com.Scm.Upgrade
             await ExecuteStepsAsync(config);
         }
 
+        /// <summary>
+        /// 执行升级（同步）
+        /// </summary>
+        /// <param name="config"></param>
         public void Start(UpgradeConfig config)
         {
             StartAsync(config).GetAwaiter().GetResult();
         }
 
+        /// <summary>
+        /// 执行升级步骤
+        /// </summary>
+        /// <param name="config"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         private async Task ExecuteStepsAsync(UpgradeConfig config)
         {
             Log("────────────────────────────────────────");
-            Log($"升级程序 v{MAJOR}.{MINOR}.{PATCH}.{BUILD} ({RELEASE})");
-            Log($"开始执行 {config.Steps.Count} 个升级步骤...");
+            Log($"升级程序：v{MAJOR}.{MINOR}.{PATCH}.{BUILD} ({RELEASE})");
+            Log($"开始执行：{config.Steps.Count} 个升级步骤...");
             Log("────────────────────────────────────────");
             LogNewLine();
 
@@ -247,17 +267,24 @@ namespace Com.Scm.Upgrade
             Log("────────────────────────────────────────");
             if (failedSteps.Count > 0)
             {
-                Log($"升级完成 {failedSteps.Count} 个步骤失败：{string.Join(", ", failedSteps)}");
-                Log("升级提示 请检查失败步骤的错误信息并重新执行");
+                Log($"升级完成：{failedSteps.Count} 个步骤失败：{string.Join(", ", failedSteps)}");
+                Log("升级提示：请检查失败步骤的错误信息并重新执行");
             }
             else
             {
-                Log("升级完成 所有升级步骤执行完成");
-                Log("升级提示 升级成功");
+                Log("升级完成：所有升级步骤执行完成");
+                Log("升级提示：升级成功");
             }
             Log("────────────────────────────────────────");
         }
 
+        /// <summary>
+        /// 执行升级步骤（带重试）
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="action"></param>
+        /// <param name="stepNumber"></param>
+        /// <returns></returns>
         private async Task<UpgradeResult> ExecuteStepWithRetryAsync(StepConfig step, UpgradeAction action, int stepNumber)
         {
             var maxRetry = step.RetryCount;
@@ -295,12 +322,13 @@ namespace Com.Scm.Upgrade
             return new UpgradeResult { Success = false, Message = "执行失败" };
         }
 
-        private UpgradeAction GetAction(UpgradeOption option)
-        {
-            _Actions.TryGetValue(option, out var action);
-            return action;
-        }
-
+        #region 升级操作
+        /// <summary>
+        /// 下载文件（异步）
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="stepNumber"></param>
+        /// <returns></returns>
         private async Task<UpgradeResult> ExecuteDownloadAsync(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Url))
@@ -348,11 +376,23 @@ namespace Com.Scm.Upgrade
             }
         }
 
+        /// <summary>
+        /// 下载文件（同步）
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="stepNumber"></param>
+        /// <returns></returns>
         private UpgradeResult ExecuteDownload(StepConfig step, int stepNumber)
         {
             return ExecuteDownloadAsync(step, stepNumber).GetAwaiter().GetResult();
         }
 
+        /// <summary>
+        /// 上传文件（异步）
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="stepNumber"></param>
+        /// <returns></returns>
         private async Task<UpgradeResult> ExecuteUploadAsync(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Url))
@@ -401,11 +441,23 @@ namespace Com.Scm.Upgrade
             }
         }
 
+        /// <summary>
+        /// 上传文件（同步）
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="stepNumber"></param>
+        /// <returns></returns>
         private UpgradeResult ExecuteUpload(StepConfig step, int stepNumber)
         {
             return ExecuteUploadAsync(step, stepNumber).GetAwaiter().GetResult();
         }
 
+        /// <summary>
+        /// 执行命令
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="stepNumber"></param>
+        /// <returns></returns>
         private UpgradeResult ExecuteCommand(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Command))
@@ -477,6 +529,12 @@ namespace Com.Scm.Upgrade
             }
         }
 
+        /// <summary>
+        /// 启动应用
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="stepNumber"></param>
+        /// <returns></returns>
         private UpgradeResult ExecuteLaunch(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Command))
@@ -516,6 +574,12 @@ namespace Com.Scm.Upgrade
             }
         }
 
+        /// <summary>
+        /// 压缩文件
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="stepNumber"></param>
+        /// <returns></returns>
         private UpgradeResult ExecuteZip(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Source))
@@ -584,6 +648,12 @@ namespace Com.Scm.Upgrade
             }
         }
 
+        /// <summary>
+        /// 解压文件
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="stepNumber"></param>
+        /// <returns></returns>
         private UpgradeResult ExecuteUnzip(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Source))
@@ -674,6 +744,12 @@ namespace Com.Scm.Upgrade
             }
         }
 
+        /// <summary>
+        /// 移动目录
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="stepNumber"></param>
+        /// <returns></returns>
         private UpgradeResult ExecuteMoveDir(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Source))
@@ -705,6 +781,12 @@ namespace Com.Scm.Upgrade
             }
         }
 
+        /// <summary>
+        /// 移动文件
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="stepNumber"></param>
+        /// <returns></returns>
         private UpgradeResult ExecuteMoveDoc(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Source))
@@ -743,6 +825,12 @@ namespace Com.Scm.Upgrade
             }
         }
 
+        /// <summary>
+        /// 复制目录
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="stepNumber"></param>
+        /// <returns></returns>
         private UpgradeResult ExecuteCopyDir(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Source))
@@ -774,6 +862,12 @@ namespace Com.Scm.Upgrade
             }
         }
 
+        /// <summary>
+        /// 复制文件
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="stepNumber"></param>
+        /// <returns></returns>
         private UpgradeResult ExecuteCopyDoc(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Source))
@@ -806,6 +900,12 @@ namespace Com.Scm.Upgrade
             }
         }
 
+        /// <summary>
+        /// 创建目录
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="stepNumber"></param>
+        /// <returns></returns>
         private UpgradeResult ExecuteCreateDir(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Path))
@@ -827,6 +927,12 @@ namespace Com.Scm.Upgrade
             }
         }
 
+        /// <summary>
+        /// 创建文件
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="stepNumber"></param>
+        /// <returns></returns>
         private UpgradeResult ExecuteCreateDoc(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Path))
@@ -855,6 +961,12 @@ namespace Com.Scm.Upgrade
             }
         }
 
+        /// <summary>
+        /// 删除目录
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="stepNumber"></param>
+        /// <returns></returns>
         private UpgradeResult ExecuteDeleteDir(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Path))
@@ -881,6 +993,12 @@ namespace Com.Scm.Upgrade
             }
         }
 
+        /// <summary>
+        /// 删除文件
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="stepNumber"></param>
+        /// <returns></returns>
         private UpgradeResult ExecuteDeleteDoc(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Path))
@@ -907,6 +1025,12 @@ namespace Com.Scm.Upgrade
             }
         }
 
+        /// <summary>
+        /// 更名目录
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="stepNumber"></param>
+        /// <returns></returns>
         private UpgradeResult ExecuteRenameDir(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.OldName))
@@ -947,6 +1071,12 @@ namespace Com.Scm.Upgrade
             }
         }
 
+        /// <summary>
+        /// 更名文件
+        /// </summary>
+        /// <param name="step"></param>
+        /// <param name="stepNumber"></param>
+        /// <returns></returns>
         private UpgradeResult ExecuteRenameDoc(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.OldName))
@@ -986,7 +1116,21 @@ namespace Com.Scm.Upgrade
                 return new UpgradeResult { Success = false, Message = $"更名文件失败：{ex.Message}" };
             }
         }
+        #endregion
 
+        #region 工具方法
+        private UpgradeAction GetAction(UpgradeOption option)
+        {
+            _Actions.TryGetValue(option, out var action);
+            return action;
+        }
+
+        /// <summary>
+        /// 移动目录
+        /// </summary>
+        /// <param name="sourceDir"></param>
+        /// <param name="destinationDir"></param>
+        /// <param name="overwrite"></param>
         private void MoveDirectory(string sourceDir, string destinationDir, bool overwrite)
         {
             Directory.CreateDirectory(destinationDir);
@@ -1004,6 +1148,12 @@ namespace Com.Scm.Upgrade
             }
         }
 
+        /// <summary>
+        /// 复制目录
+        /// </summary>
+        /// <param name="sourceDir"></param>
+        /// <param name="destinationDir"></param>
+        /// <param name="overwrite"></param>
         private void CopyDirectory(string sourceDir, string destinationDir, bool overwrite)
         {
             Directory.CreateDirectory(destinationDir);
@@ -1021,6 +1171,11 @@ namespace Com.Scm.Upgrade
             }
         }
 
+        /// <summary>
+        /// 文件大小格式化
+        /// </summary>
+        /// <param name="size"></param>
+        /// <returns></returns>
         private string FormatFileSize(long size)
         {
             var units = new string[] { "B", "KB", "MB", "GB", "TB", "PB" };
@@ -1033,6 +1188,11 @@ namespace Com.Scm.Upgrade
             return size + units[i];
         }
 
+        /// <summary>
+        /// 命令行解析
+        /// </summary>
+        /// <param name="command"></param>
+        /// <returns></returns>
         private Tuple<string, string> ParseCommand(string command)
         {
             if (string.IsNullOrWhiteSpace(command))
@@ -1063,9 +1223,12 @@ namespace Com.Scm.Upgrade
 
             return Tuple.Create(command, string.Empty);
         }
+        #endregion
 
+        #region 日志输出
         private void Log(string message)
         {
+            LogToFile(message);
             _View?.Log(message);
         }
 
@@ -1076,28 +1239,69 @@ namespace Com.Scm.Upgrade
 
         private void LogStep(int step, int count, string message)
         {
+            LogToFile($"step:{step}, count:{count}, message:{message}");
             _View?.LogStep(step, count, message);
-            //StepStatusChanged?.Invoke(step, 0, message);
         }
 
         private void LogStepInfo(int step, string info, string message)
         {
+            LogToFile($"step:{step}, info:{info}, message:{message}");
             _View?.LogStepInfo(step, info, message);
         }
 
         private void LogStepWait(int step, int time, string message)
         {
+            LogToFile($"step:{step}, time:{time}, message:{message}");
             _View?.LogStepWait(step, time, message);
         }
 
         private void LogStepStatus(int step, StepStatus status, string message)
         {
+            LogToFile($"step:{step}, status:{status}, message:{message}");
             _View?.LogStepStatus(step, status, message);
         }
 
         private void LogStepProgress(int step, int progress, string message)
         {
+            LogToFile($"step:{step}, progress:{progress}, message:{message}");
             _View?.LogStepProgress(step, progress, message);
+        }
+
+        /// <summary>
+        /// 记录日志到文件
+        /// </summary>
+        /// <param name="message"></param>
+        private async void LogToFile(string message)
+        {
+            if (!_Config.LogToFile)
+            {
+                return;
+            }
+
+            var now = DateTime.Now;
+
+            if (_writer == null)
+            {
+                var date = now.ToString("yyyyMMdd");
+                _writer = new StreamWriter($"Upgrade_{date}.log") { AutoFlush = true };
+            }
+
+            var time = now.ToString("yyyy-MM-dd HH:mm:ss");
+            await _writer.WriteLineAsync($"{time} {message}");
+        }
+        #endregion
+
+        /// <summary>
+        /// 析构
+        /// </summary>
+        public void Dispose()
+        {
+            if (_writer != null)
+            {
+                _writer.Close();
+                _writer.Dispose();
+                _writer = null;
+            }
         }
     }
 }

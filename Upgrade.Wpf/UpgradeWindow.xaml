@@ -437,7 +437,7 @@
                             <StackPanel Grid.Row="0" Orientation="Horizontal">
                                 <Rectangle Width="3" Height="14" Fill="{StaticResource Vermilion}" RadiusX="2" RadiusY="2" VerticalAlignment="Center"/>
                                 <TextBlock
-                                    Text="升级日志"
+                                    Text="升级事项"
                                     Foreground="{StaticResource ChinaBlue}"
                                     FontSize="13"
                                     FontWeight="Bold"

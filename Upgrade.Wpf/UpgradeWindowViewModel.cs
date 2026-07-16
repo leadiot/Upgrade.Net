@@ -15,8 +15,10 @@ namespace Com.Scm.Upgrade
         public const int MINOR = 2;
         public const int PATCH = 3;
         public const int BUILD = 4;
-        public const string RELEASE = "2026-07-15";
 
+        public const string RELEASE_DATE = "2026-07-15";
+
+        #region 视图属性
         private ImageSource _icon;
         public ImageSource Icon
         {
@@ -167,22 +169,24 @@ namespace Com.Scm.Upgrade
             get => _startButtonText;
             set => SetProperty(ref _startButtonText, value);
         }
+        #endregion
 
+        #region 视图事件
         public ICommand StartCommand { get; }
         public ICommand CloseCommand { get; }
         public ICommand LaterCommand { get; }
         public ICommand CloseWindowCommand { get; }
 
         public event Action<int> ScrollToStepRequested;
+        #endregion
 
-        private readonly UpgradeConfig _config;
-        private readonly Upgrade _upgrade;
-        private StreamWriter _writer;
+        private readonly UpgradeConfig _Config;
+        private readonly Upgrade _Upgrade;
 
         public UpgradeWindowViewModel(UpgradeConfig config)
         {
-            _config = config;
-            _upgrade = new Upgrade(this);
+            _Config = config;
+            _Upgrade = new Upgrade(this);
 
             StartCommand = new RelayCommand(ExecuteStart);
             CloseCommand = new RelayCommand(ExecuteClose);
@@ -192,27 +196,18 @@ namespace Com.Scm.Upgrade
             Initialize();
         }
 
-        public void OnWindowLoaded()
-        {
-            if (_config.AutoStart)
-            {
-                ExecuteStart(null);
-            }
-        }
-
+        #region 初始化
         private void Initialize()
         {
-            _writer = new StreamWriter("Upgrade.log") { AutoFlush = true };
-
             var appTitle = $"Upgrade.Wpf v{MAJOR}.{MINOR}.{PATCH}.{BUILD}";
-            Title = string.IsNullOrEmpty(_config.Title) ? appTitle : _config.Title;
-            Subtitle = $"{_config.OldVersion} → {_config.NewVersion}";
-            AppInfo = _config.AppInfo ?? "应用简介为空";
-            VerInfo = _config.VerInfo ?? "暂无版本升级说明";
+            Title = string.IsNullOrEmpty(_Config.Title) ? appTitle : _Config.Title;
+            Subtitle = $"{_Config.OldVersion} → {_Config.NewVersion}";
+            AppInfo = _Config.AppInfo ?? "应用简介为空";
+            VerInfo = _Config.VerInfo ?? "暂无版本升级说明";
 
-            if (!string.IsNullOrWhiteSpace(_config.Icon) && File.Exists(_config.Icon))
+            if (!string.IsNullOrWhiteSpace(_Config.Icon) && File.Exists(_Config.Icon))
             {
-                Icon = new BitmapImage(new Uri(_config.Icon, UriKind.RelativeOrAbsolute));
+                Icon = new BitmapImage(new Uri(_Config.Icon, UriKind.RelativeOrAbsolute));
             }
             else
             {
@@ -224,6 +219,43 @@ namespace Com.Scm.Upgrade
             Notice = "初始化完成，点击开始升级";
         }
 
+        private void InitializeStepList()
+        {
+            Steps.Clear();
+            if (_Config.Steps == null)
+            {
+                return;
+            }
+
+            foreach (var step in _Config.Steps)
+            {
+                Steps.Add(new StepItemDvo
+                {
+                    StepNumber = Steps.Count + 1,
+                    Title = string.IsNullOrEmpty(step.Title) ? UpgradeAction.GetActionTitle(step.Option) : step.Title,
+                    Status = StepStatus.Pending,
+                    Message = "等待执行"
+                });
+            }
+        }
+        #endregion
+
+        #region 交互事件
+        /// <summary>
+        /// 窗口加载完成事件
+        /// </summary>
+        public void OnWindowLoaded()
+        {
+            if (_Config.AutoStart)
+            {
+                ExecuteStart(null);
+            }
+        }
+
+        /// <summary>
+        /// 开始升级按钮事件
+        /// </summary>
+        /// <param name="parameter"></param>
         private void ExecuteStart(object parameter)
         {
             if (IsRunning) return;
@@ -241,9 +273,9 @@ namespace Com.Scm.Upgrade
             {
                 try
                 {
-                    await _upgrade.StartAsync(_config);
+                    await _Upgrade.StartAsync(_Config);
 
-                    if (!_config.AutoClose)
+                    if (!_Config.AutoClose)
                     {
                         Notice = "升级完成！";
                         CloseEnabled = true;
@@ -287,95 +319,89 @@ namespace Com.Scm.Upgrade
             });
         }
 
+        /// <summary>
+        /// 关闭窗口按钮事件
+        /// </summary>
+        /// <param name="parameter"></param>
         private void ExecuteClose(object parameter)
-        {
-            Application.Current.Shutdown();
-        }
-
-        private void ExecuteLater(object parameter)
-        {
-            Application.Current.Shutdown();
-        }
-
-        private void ExecuteCloseWindow(object parameter)
         {
             Dispose();
             Application.Current.Shutdown();
         }
 
-        private void InitializeStepList()
+        /// <summary>
+        /// 稍后提醒按钮事件
+        /// </summary>
+        /// <param name="parameter"></param>
+        private void ExecuteLater(object parameter)
         {
-            Steps.Clear();
-            if (_config.Steps != null)
-            {
-                foreach (var step in _config.Steps)
-                {
-                    Steps.Add(new StepItemDvo
-                    {
-                        StepNumber = Steps.Count + 1,
-                        Title = string.IsNullOrEmpty(step.Title) ? GetActionTitle(step.Option) : step.Title,
-                        Status = StepStatus.Pending,
-                        Message = "等待执行"
-                    });
-                }
-            }
+            Application.Current.Shutdown();
         }
 
-        private string GetActionTitle(UpgradeOption option) => option switch
+        /// <summary>
+        /// 关闭窗口窗体事件
+        /// </summary>
+        /// <param name="parameter"></param>
+        private void ExecuteCloseWindow(object parameter)
         {
-            UpgradeOption.Download => "下载文件",
-            UpgradeOption.Command => "执行命令",
-            UpgradeOption.Launch => "执行程序",
-            UpgradeOption.Zip => "压缩文件",
-            UpgradeOption.Unzip => "解压文件",
-            UpgradeOption.MoveDir => "移动目录",
-            UpgradeOption.MoveDoc => "移动文件",
-            UpgradeOption.CopyDir => "复制目录",
-            UpgradeOption.CopyDoc => "复制文件",
-            UpgradeOption.CreateDir => "创建目录",
-            UpgradeOption.CreateDoc => "创建文件",
-            UpgradeOption.DeleteDir => "删除目录",
-            UpgradeOption.DeleteDoc => "删除文件",
-            UpgradeOption.RenameDir => "重命名目录",
-            UpgradeOption.RenameDoc => "重命名文件",
-            _ => "未知操作"
-        };
-
-        private void LogToFile(string message)
-        {
-            _writer?.WriteLine(message);
+            Dispose();
+            Application.Current.Shutdown();
         }
+        #endregion
 
+        #region 工具方法
+
+        /// <summary>
+        /// 
+        /// </summary>
         public void Dispose()
         {
-            if (_writer != null)
-            {
-                _writer.Close();
-                _writer.Dispose();
-                _writer = null;
-            }
+            _Upgrade.Dispose();
         }
+        #endregion
 
+        #region 接口实现
         public void Log(string message)
         {
             Notice = message;
-            LogToFile(message);
         }
 
         public void LogNewLine()
         {
+            // 无需处理
         }
 
         public void LogStep(int stepNumber, int count, string message)
         {
             //Notice = $"[步骤{step}/{count}] " + message;
             Log($"[步骤{stepNumber}/{count}] " + message);
+        }
+
+        public void LogStepInfo(int step, string info, string message)
+        {
+            // 无需处理
+            //Notice = $"[{info}] {message}";
+        }
+
+        public void LogStepWait(int step, int time, string message)
+        {
+            // 无需处理
+            //Notice = message;
+        }
+
+        public void LogStepProgress(int step, int progress, string message)
+        {
+            Percent = progress;
+            Notice = message;
+        }
+
+        public void LogStepStatus(int stepNumber, StepStatus status, string message)
+        {
             Application.Current.Dispatcher.Invoke(() =>
             {
                 if (Steps.Count >= stepNumber)
                 {
                     var step = Steps[stepNumber - 1];
-                    //step.Title = title;
                     //step.Title = title;
                     step.Message = message;
                     step.Status = StepStatus.Running;
@@ -385,42 +411,10 @@ namespace Com.Scm.Upgrade
             });
         }
 
-        public void LogStepInfo(int step, string info, string message)
-        {
-            //Notice = $"[{info}] {message}";
-            LogToFile($"[{info}] {message}");
-        }
-
-        public void LogStepWait(int step, int time, string message)
-        {
-            //Notice = message;
-            LogToFile(message);
-        }
-
-        public void LogStepProgress(int step, int progress, string message)
-        {
-            Percent = progress;
-            Notice = message;
-        }
-
         public void ResetProgress()
         {
             Percent = 0;
         }
-
-        public void LogStepStatus(int stepNumber, StepStatus status, string message)
-        {
-            if (Steps.Count >= stepNumber)
-            {
-                var step = Steps[stepNumber - 1];
-                step.Message = message;
-                step.Status = status;
-
-                if (status == StepStatus.Running)
-                {
-                    ScrollToStepRequested?.Invoke(stepNumber - 1);
-                }
-            }
-        }
+        #endregion
     }
 }

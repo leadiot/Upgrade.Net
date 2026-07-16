@@ -91,6 +91,7 @@ namespace Com.Scm.Upgrade.Config
         public bool Overwrite { get; set; } = true;
         #endregion
 
+        #region 静态方法
         /// <summary>
         /// 下载步骤
         /// </summary>
@@ -102,6 +103,24 @@ namespace Com.Scm.Upgrade.Config
             return new StepConfig
             {
                 Option = UpgradeOption.Download,
+                Title = title,
+                Url = url,
+                File = file
+            };
+        }
+
+        /// <summary>
+        /// 上传步骤
+        /// </summary>
+        /// <param name="title"></param>
+        /// <param name="url"></param>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        public static StepConfig NewUploadStep(string title, string url, string file)
+        {
+            return new StepConfig
+            {
+                Option = UpgradeOption.Upload,
                 Title = title,
                 Url = url,
                 File = file
@@ -357,16 +376,6 @@ namespace Com.Scm.Upgrade.Config
                 Overwrite = overwrite
             };
         }
-
-        public static StepConfig NewUploadStep(string title, string url, string file)
-        {
-            return new StepConfig
-            {
-                Option = UpgradeOption.Upload,
-                Title = title,
-                Url = url,
-                File = file
-            };
-        }
+        #endregion
     }
 }
