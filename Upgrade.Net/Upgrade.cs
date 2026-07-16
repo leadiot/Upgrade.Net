@@ -7,8 +7,8 @@ namespace Com.Scm.Upgrade
     {
         public const int MAJOR = 1;
         public const int MINOR = 1;
-        public const int PATCH = 2;
-        public const int BUILD = 2;
+        public const int PATCH = 3;
+        public const int BUILD = 3;
         public const string RELEASE = "2026-07-16";
 
         private static readonly HttpClient _HttpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };

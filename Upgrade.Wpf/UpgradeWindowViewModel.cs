@@ -13,8 +13,8 @@ namespace Com.Scm.Upgrade
     {
         public const int MAJOR = 2;
         public const int MINOR = 3;
-        public const int PATCH = 4;
-        public const int BUILD = 5;
+        public const int PATCH = 5;
+        public const int BUILD = 6;
 
         public const string RELEASE_DATE = "2026-07-16";
 
