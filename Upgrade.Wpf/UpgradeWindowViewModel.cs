@@ -6,7 +6,6 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Upgrade.Net;
 
 namespace Com.Scm.Upgrade
 {
@@ -367,25 +366,38 @@ namespace Com.Scm.Upgrade
         {
         }
 
-        public void LogStep(int step, int count, string message)
+        public void LogStep(int stepNumber, int count, string message)
         {
             //Notice = $"[步骤{step}/{count}] " + message;
-            Log($"[步骤{step}/{count}] " + message);
+            Log($"[步骤{stepNumber}/{count}] " + message);
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                if (Steps.Count >= stepNumber)
+                {
+                    var step = Steps[stepNumber - 1];
+                    //step.Title = title;
+                    //step.Title = title;
+                    step.Message = message;
+                    step.Status = StepStatus.Running;
+
+                    ScrollToStepRequested?.Invoke(stepNumber - 1);
+                }
+            });
         }
 
-        public void LogStepInfo(string info, string message)
+        public void LogStepInfo(int step, string info, string message)
         {
             //Notice = $"[{info}] {message}";
             LogToFile($"[{info}] {message}");
         }
 
-        public void LogStepWait(int time, string message)
+        public void LogStepWait(int step, int time, string message)
         {
             //Notice = message;
             LogToFile(message);
         }
 
-        public void LogStepProgress(int progress, string message)
+        public void LogStepProgress(int step, int progress, string message)
         {
             Percent = progress;
             Notice = message;
@@ -396,23 +408,19 @@ namespace Com.Scm.Upgrade
             Percent = 0;
         }
 
-        public void LogStepStatus(int stepNumber, StepStatus status, string title, string message)
+        public void LogStepStatus(int stepNumber, StepStatus status, string message)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            if (Steps.Count >= stepNumber)
             {
-                if (Steps.Count >= stepNumber)
-                {
-                    var step = Steps[stepNumber - 1];
-                    step.Title = title;
-                    step.Message = message;
-                    step.Status = status;
+                var step = Steps[stepNumber - 1];
+                step.Message = message;
+                step.Status = status;
 
-                    if (status == StepStatus.Running)
-                    {
-                        ScrollToStepRequested?.Invoke(stepNumber - 1);
-                    }
+                if (status == StepStatus.Running)
+                {
+                    ScrollToStepRequested?.Invoke(stepNumber - 1);
                 }
-            });
+            }
         }
     }
 }

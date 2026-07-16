@@ -25,8 +25,8 @@
 		<PackageRepositoryUrl>https://github.com/leadiot/Upgrade.Net</PackageRepositoryUrl>
 		<PackageTags>upgrade,update,installer,dotnet,wpf,console</PackageTags>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<PackageIcon>logo128.png</PackageIcon>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageIcon></PackageIcon>
+		<PackageReadmeFile></PackageReadmeFile>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -35,10 +35,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Update="docs\README.md">
-	    <Pack>True</Pack>
-	    <PackagePath>\</PackagePath>
-	  </None>
 	  <None Update="Resources\logo128.png">
 	    <Pack>True</Pack>
 	    <PackagePath>\</PackagePath>

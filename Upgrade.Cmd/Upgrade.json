@@ -1,5 +1,5 @@
 {
-  "title": "完整升级流程测试",
+  "title": "Upgrade.Cmd 完整升级流程测试",
   "autoStart": true,
   "autoClose": false,
   "installPath": "D:\\temp\\upgrade_test",

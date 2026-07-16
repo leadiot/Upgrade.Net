@@ -1,5 +1,4 @@
 ﻿using Com.Scm.Upgrade.Config;
-using Upgrade.Net;
 
 namespace Com.Scm.Upgrade
 {
@@ -118,24 +117,24 @@ namespace Com.Scm.Upgrade
             Console.WriteLine($"[步骤{step}/{count}] " + message);
         }
 
-        public void LogStepInfo(string info, string message)
+        public void LogStepInfo(int step, string info, string message)
         {
             Console.WriteLine($"   [{info}] {message}");
         }
 
-        public void LogStepWait(int time, string message)
+        public void LogStepWait(int step, int time, string message)
         {
             Console.WriteLine($"   [等待] {message}");
         }
 
-        public void LogStepProgress(int progress, string message)
-        {
-            Console.Write($"\r   [进度] {message}");
-        }
-
-        public void LogStepStatus(int stepNumber, StepStatus status, string title, string message)
+        public void LogStepStatus(int step, StepStatus status, string message)
         {
             //Console.WriteLine($"   [消息] {message}");
+        }
+
+        public void LogStepProgress(int step, int progress, string message)
+        {
+            Console.Write($"\r   [进度] {message}");
         }
 
         public void ResetProgress()

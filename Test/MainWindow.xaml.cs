@@ -1,9 +1,9 @@
+using Com.Scm.Upgrade;
 using Com.Scm.Upgrade.Config;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using Upgrade.Net;
 
 namespace Test
 {
@@ -172,17 +172,17 @@ namespace Test
             Log($"[步骤 {step}/{count}] {message}");
         }
 
-        public void LogStepInfo(string info, string message)
+        public void LogStepInfo(int step, string info, string message)
         {
             Log($"  [{info}] {message}");
         }
 
-        public void LogStepWait(int time, string message)
+        public void LogStepWait(int step, int time, string message)
         {
             Log($"  [等待] {message}");
         }
 
-        public void LogStepProgress(int progress, string message)
+        public void LogStepProgress(int step, int progress, string message)
         {
             Dispatcher.Invoke(() =>
             {
@@ -197,7 +197,7 @@ namespace Test
             });
         }
 
-        public void LogStepStatus(int stepNumber, StepStatus status, string title, string message)
+        public void LogStepStatus(int step, StepStatus status, string message)
         {
             Log($"  [状态] {message}");
         }

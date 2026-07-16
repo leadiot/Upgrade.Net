@@ -1,6 +1,5 @@
 using Com.Scm.Upgrade.Config;
 using System.IO.Compression;
-using Upgrade.Net;
 
 namespace Com.Scm.Upgrade
 {
@@ -191,7 +190,7 @@ namespace Com.Scm.Upgrade
                 if (action == null)
                 {
                     LogStep(stepNumber, config.Steps.Count, $"跳过未知操作类型：{step.Option}");
-                    LogStepStatus(stepNumber, StepStatus.Skipped, "未知操作", "跳过");
+                    LogStepStatus(stepNumber, StepStatus.Skipped, "跳过未知操作");
                     continue;
                 }
 
@@ -199,14 +198,14 @@ namespace Com.Scm.Upgrade
                 var description = string.IsNullOrEmpty(step.Description) ? action.Description : step.Description;
 
                 LogStep(stepNumber, config.Steps.Count, $"正在执行：{title}");
-                LogStepInfo("说明", description);
+                LogStepInfo(stepNumber, "说明", description);
 
                 if (!string.IsNullOrEmpty(step.Description))
                 {
-                    LogStepInfo("状态", "准备执行...");
+                    LogStepInfo(stepNumber, "状态", "准备执行...");
                 }
 
-                LogStepStatus(stepNumber, StepStatus.Running, title, "执行中");
+                LogStepStatus(stepNumber, StepStatus.Running, title + "执行中");
 
                 var result = await ExecuteStepWithRetryAsync(step, action, stepNumber);
 
@@ -214,32 +213,32 @@ namespace Com.Scm.Upgrade
                 {
                     failedSteps.Add(stepNumber);
 
-                    LogStepStatus(stepNumber, StepStatus.Failed, title, result.Message);
+                    LogStepStatus(stepNumber, StepStatus.Failed, result.Message);
 
                     if (!step.ContinueOnError)
                     {
-                        LogStepInfo("终止", $"步骤失败且不允许继续，终止升级流程");
+                        LogStepInfo(stepNumber, "终止", $"步骤失败且不允许继续，终止升级流程");
                         throw new Exception($"步骤 {stepNumber} 执行失败：{result.Message}");
                     }
 
-                    LogStepInfo("继续", $"步骤失败但允许继续，继续执行后续步骤");
+                    LogStepInfo(stepNumber, "继续", $"步骤失败但允许继续，继续执行后续步骤");
                 }
                 else
                 {
-                    LogStepInfo("完成", result.Message);
+                    LogStepInfo(stepNumber, "完成", result.Message);
 
                     if (step.WaitTime > 0)
                     {
-                        LogStepWait(step.WaitTime, $"等待 {step.WaitTime} 秒后继续...");
+                        LogStepWait(stepNumber, step.WaitTime, $"等待 {step.WaitTime} 秒后继续...");
                         for (int remaining = step.WaitTime; remaining > 0; remaining--)
                         {
-                            LogStepWait(remaining, $"等待中，剩余 {remaining} 秒");
+                            LogStepWait(stepNumber, remaining, $"等待中，剩余 {remaining} 秒");
                             await Task.Delay(1000);
                         }
-                        LogStepWait(0, "等待结束，继续下一步");
+                        LogStepWait(stepNumber, 0, "等待结束，继续下一步");
                     }
 
-                    LogStepStatus(stepNumber, StepStatus.Success, title, result.Message);
+                    LogStepStatus(stepNumber, StepStatus.Success, result.Message);
                 }
 
                 LogNewLine();
@@ -273,17 +272,17 @@ namespace Com.Scm.Upgrade
                 {
                     if (action.Option == UpgradeOption.Download)
                     {
-                        return await ExecuteDownloadAsync(step);
+                        return await ExecuteDownloadAsync(step, stepNumber);
                     }
-                    return await Task.Run(() => action.Execute(step));
+                    return await Task.Run(() => action.Execute(step, stepNumber));
                 }
                 catch (Exception ex)
                 {
-                    LogStepInfo("重试", $"第 {attempt} 次尝试失败：{ex.Message}");
+                    LogStepInfo(stepNumber, "重试", $"第 {attempt} 次尝试失败：{ex.Message}");
 
                     if (attempt <= maxRetry)
                     {
-                        LogStepInfo("重试", $"等待 {retryDelay} 毫秒后重试...");
+                        LogStepInfo(stepNumber, "重试", $"等待 {retryDelay} 毫秒后重试...");
                         await Task.Delay(retryDelay);
                     }
                     else
@@ -302,7 +301,7 @@ namespace Com.Scm.Upgrade
             return action;
         }
 
-        private async Task<UpgradeResult> ExecuteDownloadAsync(StepConfig step)
+        private async Task<UpgradeResult> ExecuteDownloadAsync(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Url))
             {
@@ -315,7 +314,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                LogStepInfo("下载", $"从 {step.Url} 下载到 {destPath}");
+                LogStepInfo(stepNumber, "下载", $"从 {step.Url} 下载到 {destPath}");
 
                 var response = await _HttpClient.GetAsync(step.Url, HttpCompletionOption.ResponseHeadersRead);
                 response.EnsureSuccessStatusCode();
@@ -334,7 +333,7 @@ namespace Com.Scm.Upgrade
                         if (totalBytes > 0)
                         {
                             var progress = (int)((totalRead * 100) / totalBytes);
-                            LogStepProgress(progress, $"下载进度：{progress}%");
+                            LogStepProgress(stepNumber, progress, $"下载进度：{progress}%");
                         }
                     }
                 }
@@ -349,12 +348,12 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private UpgradeResult ExecuteDownload(StepConfig step)
+        private UpgradeResult ExecuteDownload(StepConfig step, int stepNumber)
         {
-            return ExecuteDownloadAsync(step).GetAwaiter().GetResult();
+            return ExecuteDownloadAsync(step, stepNumber).GetAwaiter().GetResult();
         }
 
-        private async Task<UpgradeResult> ExecuteUploadAsync(StepConfig step)
+        private async Task<UpgradeResult> ExecuteUploadAsync(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Url))
             {
@@ -373,7 +372,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                LogStepInfo("上传", $"从 {step.File} 上传到 {step.Url}");
+                LogStepInfo(stepNumber, "上传", $"从 {step.File} 上传到 {step.Url}");
 
                 using (var fileStream = File.OpenRead(step.File))
                 using (var content = new StreamContent(fileStream))
@@ -402,12 +401,12 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private UpgradeResult ExecuteUpload(StepConfig step)
+        private UpgradeResult ExecuteUpload(StepConfig step, int stepNumber)
         {
-            return ExecuteUploadAsync(step).GetAwaiter().GetResult();
+            return ExecuteUploadAsync(step, stepNumber).GetAwaiter().GetResult();
         }
 
-        private UpgradeResult ExecuteCommand(StepConfig step)
+        private UpgradeResult ExecuteCommand(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Command))
             {
@@ -416,7 +415,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                LogStepInfo("执行", $"命令：{step.Command} {step.Args ?? ""}");
+                LogStepInfo(stepNumber, "执行", $"命令：{step.Command} {step.Args ?? ""}");
 
                 var parts = ParseCommand(step.Command);
                 var exePath = parts.Item1;
@@ -443,11 +442,11 @@ namespace Com.Scm.Upgrade
 
                         if (!string.IsNullOrEmpty(output))
                         {
-                            LogStepInfo("输出", output.Trim().Substring(0, Math.Min(200, output.Length)));
+                            LogStepInfo(stepNumber, "输出", output.Trim().Substring(0, Math.Min(200, output.Length)));
                         }
                         if (!string.IsNullOrEmpty(error))
                         {
-                            LogStepInfo("警告", error.Trim().Substring(0, Math.Min(200, error.Length)));
+                            LogStepInfo(stepNumber, "警告", error.Trim().Substring(0, Math.Min(200, error.Length)));
                         }
 
                         if (exited)
@@ -478,7 +477,7 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private UpgradeResult ExecuteLaunch(StepConfig step)
+        private UpgradeResult ExecuteLaunch(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Command))
             {
@@ -487,7 +486,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                LogStepInfo("启动", $"程序：{step.Command} {step.Args ?? ""}");
+                LogStepInfo(stepNumber, "启动", $"程序：{step.Command} {step.Args ?? ""}");
 
                 var parts = ParseCommand(step.Command);
                 var exePath = parts.Item1;
@@ -517,7 +516,7 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private UpgradeResult ExecuteZip(StepConfig step)
+        private UpgradeResult ExecuteZip(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Source))
             {
@@ -532,7 +531,7 @@ namespace Com.Scm.Upgrade
             {
                 if (Directory.Exists(step.Source))
                 {
-                    LogStepInfo("压缩", $"目录：{step.Source} -> {destPath}");
+                    LogStepInfo(stepNumber, "压缩", $"目录：{step.Source} -> {destPath}");
 
                     var files = Directory.GetFiles(step.Source, "*", SearchOption.AllDirectories);
                     var totalFiles = files.Length;
@@ -549,7 +548,7 @@ namespace Com.Scm.Upgrade
                             var filePath = files[i];
 
                             var progress = (int)((i + 1) * 100 / totalFiles);
-                            LogStepProgress(progress, $"压缩中 [{i + 1}/{totalFiles}] {Path.GetFileName(filePath)}");
+                            LogStepProgress(stepNumber, progress, $"压缩中 [{i + 1}/{totalFiles}] {Path.GetFileName(filePath)}");
 
                             var relativePath = Path.GetRelativePath(step.Source, filePath);
                             archive.CreateEntryFromFile(filePath, relativePath, CompressionLevel.Optimal);
@@ -562,7 +561,7 @@ namespace Com.Scm.Upgrade
                 }
                 else if (File.Exists(step.Source))
                 {
-                    LogStepInfo("压缩", $"文件：{step.Source} -> {destPath}");
+                    LogStepInfo(stepNumber, "压缩", $"文件：{step.Source} -> {destPath}");
 
                     Directory.CreateDirectory(Path.GetDirectoryName(destPath) ?? ".");
 
@@ -585,7 +584,7 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private UpgradeResult ExecuteUnzip(StepConfig step)
+        private UpgradeResult ExecuteUnzip(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Source))
             {
@@ -601,14 +600,14 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                LogStepInfo("解压", $"{step.Source} -> {destPath}");
+                LogStepInfo(stepNumber, "解压", $"{step.Source} -> {destPath}");
 
                 var zipFileSize = new FileInfo(step.Source).Length;
-                LogStepInfo("统计", $"压缩包大小：{FormatFileSize(zipFileSize)}");
+                LogStepInfo(stepNumber, "统计", $"压缩包大小：{FormatFileSize(zipFileSize)}");
 
                 if (zipFileSize > 100 * 1024 * 1024)
                 {
-                    LogStepInfo("提示", $"压缩包较大（{FormatFileSize(zipFileSize)}），解压可能需要较长时间，请耐心等待...");
+                    LogStepInfo(stepNumber, "提示", $"压缩包较大（{FormatFileSize(zipFileSize)}），解压可能需要较长时间，请耐心等待...");
                 }
 
                 int totalEntries = 0;
@@ -624,15 +623,15 @@ namespace Com.Scm.Upgrade
                     }
 
                     var totalUncompressedSize = entries.Sum(e => e.Length);
-                    LogStepInfo("统计", $"压缩包内共 {totalEntries} 个文件，解压后大小：{FormatFileSize(totalUncompressedSize)}");
+                    LogStepInfo(stepNumber, "统计", $"压缩包内共 {totalEntries} 个文件，解压后大小：{FormatFileSize(totalUncompressedSize)}");
 
                     if (totalEntries > 100)
                     {
-                        LogStepInfo("提示", $"文件数量较多（{totalEntries}个），解压可能需要较长时间，请耐心等待...");
+                        LogStepInfo(stepNumber, "提示", $"文件数量较多（{totalEntries}个），解压可能需要较长时间，请耐心等待...");
                     }
                     if (totalUncompressedSize > 500 * 1024 * 1024)
                     {
-                        LogStepInfo("提示", $"解压后文件总大小较大（{FormatFileSize(totalUncompressedSize)}），解压可能需要较长时间，请耐心等待...");
+                        LogStepInfo(stepNumber, "提示", $"解压后文件总大小较大（{FormatFileSize(totalUncompressedSize)}），解压可能需要较长时间，请耐心等待...");
                     }
 
                     Directory.CreateDirectory(destPath);
@@ -654,14 +653,14 @@ namespace Com.Scm.Upgrade
 
                         if (File.Exists(path) && !step.Overwrite)
                         {
-                            LogStepInfo("跳过", $"文件已存在且不覆盖：{entry.FullName}");
+                            LogStepInfo(stepNumber, "跳过", $"文件已存在且不覆盖：{entry.FullName}");
                             continue;
                         }
 
                         entry.ExtractToFile(path, step.Overwrite);
 
                         var progress = (int)((i + 1) * 100 / totalEntries);
-                        LogStepProgress(progress, $"解压中 [{i + 1}/{totalEntries}] {entry.FullName}");
+                        LogStepProgress(stepNumber, progress, $"解压中 [{i + 1}/{totalEntries}] {entry.FullName}");
                     }
 
                     var elapsed = DateTime.Now - startTime;
@@ -675,7 +674,7 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private UpgradeResult ExecuteMoveDir(StepConfig step)
+        private UpgradeResult ExecuteMoveDir(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Source))
             {
@@ -694,7 +693,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                LogStepInfo("移动", $"目录：{step.Source} -> {step.Destination}");
+                LogStepInfo(stepNumber, "移动", $"目录：{step.Source} -> {step.Destination}");
                 MoveDirectory(step.Source, step.Destination, step.Overwrite);
                 Directory.Delete(step.Source, true);
 
@@ -706,7 +705,7 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private UpgradeResult ExecuteMoveDoc(StepConfig step)
+        private UpgradeResult ExecuteMoveDoc(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Source))
             {
@@ -725,7 +724,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                LogStepInfo("移动", $"文件：{step.Source} -> {step.Destination}");
+                LogStepInfo(stepNumber, "移动", $"文件：{step.Source} -> {step.Destination}");
 
                 Directory.CreateDirectory(Path.GetDirectoryName(step.Destination) ?? ".");
 
@@ -744,7 +743,7 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private UpgradeResult ExecuteCopyDir(StepConfig step)
+        private UpgradeResult ExecuteCopyDir(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Source))
             {
@@ -763,7 +762,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                LogStepInfo("复制", $"目录：{step.Source} -> {step.Destination}");
+                LogStepInfo(stepNumber, "复制", $"目录：{step.Source} -> {step.Destination}");
 
                 CopyDirectory(step.Source, step.Destination, step.Overwrite);
 
@@ -775,7 +774,7 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private UpgradeResult ExecuteCopyDoc(StepConfig step)
+        private UpgradeResult ExecuteCopyDoc(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Source))
             {
@@ -794,7 +793,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                LogStepInfo("复制", $"文件：{step.Source} -> {step.Destination}");
+                LogStepInfo(stepNumber, "复制", $"文件：{step.Source} -> {step.Destination}");
 
                 Directory.CreateDirectory(Path.GetDirectoryName(step.Destination) ?? ".");
                 File.Copy(step.Source, step.Destination, step.Overwrite);
@@ -807,7 +806,7 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private UpgradeResult ExecuteCreateDir(StepConfig step)
+        private UpgradeResult ExecuteCreateDir(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Path))
             {
@@ -816,7 +815,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                LogStepInfo("创建", $"目录：{step.Path}");
+                LogStepInfo(stepNumber, "创建", $"目录：{step.Path}");
 
                 Directory.CreateDirectory(step.Path);
 
@@ -828,7 +827,7 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private UpgradeResult ExecuteCreateDoc(StepConfig step)
+        private UpgradeResult ExecuteCreateDoc(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Path))
             {
@@ -837,7 +836,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                LogStepInfo("创建", $"文件：{step.Path}");
+                LogStepInfo(stepNumber, "创建", $"文件：{step.Path}");
 
                 Directory.CreateDirectory(Path.GetDirectoryName(step.Path) ?? ".");
 
@@ -856,7 +855,7 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private UpgradeResult ExecuteDeleteDir(StepConfig step)
+        private UpgradeResult ExecuteDeleteDir(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Path))
             {
@@ -870,7 +869,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                LogStepInfo("删除", $"目录：{step.Path}");
+                LogStepInfo(stepNumber, "删除", $"目录：{step.Path}");
 
                 Directory.Delete(step.Path, true);
 
@@ -882,7 +881,7 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private UpgradeResult ExecuteDeleteDoc(StepConfig step)
+        private UpgradeResult ExecuteDeleteDoc(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.Path))
             {
@@ -896,7 +895,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                LogStepInfo("删除", $"文件：{step.Path}");
+                LogStepInfo(stepNumber, "删除", $"文件：{step.Path}");
 
                 File.Delete(step.Path);
 
@@ -908,7 +907,7 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private UpgradeResult ExecuteRenameDir(StepConfig step)
+        private UpgradeResult ExecuteRenameDir(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.OldName))
             {
@@ -927,7 +926,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                LogStepInfo("更名", $"目录：{step.OldName} -> {step.NewName}");
+                LogStepInfo(stepNumber, "更名", $"目录：{step.OldName} -> {step.NewName}");
                 if (Directory.Exists(step.NewName))
                 {
                     if (!step.Overwrite)
@@ -948,7 +947,7 @@ namespace Com.Scm.Upgrade
             }
         }
 
-        private UpgradeResult ExecuteRenameDoc(StepConfig step)
+        private UpgradeResult ExecuteRenameDoc(StepConfig step, int stepNumber)
         {
             if (string.IsNullOrWhiteSpace(step.OldName))
             {
@@ -967,7 +966,7 @@ namespace Com.Scm.Upgrade
 
             try
             {
-                LogStepInfo("更名", $"文件：{step.OldName} -> {step.NewName}");
+                LogStepInfo(stepNumber, "更名", $"文件：{step.OldName} -> {step.NewName}");
                 if (File.Exists(step.NewName))
                 {
                     if (!step.Overwrite)
@@ -1081,24 +1080,24 @@ namespace Com.Scm.Upgrade
             //StepStatusChanged?.Invoke(step, 0, message);
         }
 
-        private void LogStepInfo(string info, string message)
+        private void LogStepInfo(int step, string info, string message)
         {
-            _View?.LogStepInfo(info, message);
+            _View?.LogStepInfo(step, info, message);
         }
 
-        private void LogStepWait(int time, string message)
+        private void LogStepWait(int step, int time, string message)
         {
-            _View?.LogStepWait(time, message);
+            _View?.LogStepWait(step, time, message);
         }
 
-        private void LogStepStatus(int stepNumber, StepStatus status, string title, string message)
+        private void LogStepStatus(int step, StepStatus status, string message)
         {
-            _View?.LogStepStatus(stepNumber, status, title, message);
+            _View?.LogStepStatus(step, status, message);
         }
 
-        private void LogStepProgress(int progress, string message)
+        private void LogStepProgress(int step, int progress, string message)
         {
-            _View?.LogStepProgress(progress, message);
+            _View?.LogStepProgress(step, progress, message);
         }
     }
 }

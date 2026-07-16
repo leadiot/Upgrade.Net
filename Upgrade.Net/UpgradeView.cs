@@ -1,6 +1,6 @@
-using Com.Scm.Upgrade;
+using Com.Scm.Upgrade.Config;
 
-namespace Upgrade.Net
+namespace Com.Scm.Upgrade
 {
     public interface UpgradeView
     {
@@ -28,30 +28,28 @@ namespace Upgrade.Net
         /// </summary>
         /// <param name="info"></param>
         /// <param name="message"></param>
-        void LogStepInfo(string info, string message);
+        void LogStepInfo(int step, string info, string message);
 
         /// <summary>
         /// 等待时间变化事件
         /// </summary>
         /// <param name="time"></param>
         /// <param name="message"></param>
-        void LogStepWait(int time, string message);
+        void LogStepWait(int step, int time, string message);
 
         /// <summary>
         /// 下载进度变化事件
         /// </summary>
         /// <param name="progress"></param>
         /// <param name="message"></param>
-        void LogStepProgress(int progress, string message);
+        void LogStepProgress(int step, int progress, string message);
 
         /// <summary>
         /// 步骤状态变化事件
         /// </summary>
-        /// <param name="stepNumber"></param>
         /// <param name="status"></param>
-        /// <param name="title"></param>
         /// <param name="message"></param>
-        void LogStepStatus(int stepNumber, Com.Scm.Upgrade.Config.StepStatus status, string title, string message);
+        void LogStepStatus(int step, StepStatus status, string message);
 
         void ResetProgress();
     }

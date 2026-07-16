@@ -8,6 +8,6 @@
 
         public string Description { get; set; }
 
-        public Func<StepConfig, UpgradeResult> Execute { get; set; }
+        public Func<StepConfig, int, UpgradeResult> Execute { get; set; }
     }
 }
