@@ -124,5 +124,14 @@ namespace Com.Scm.Upgrade.Config
             var json = JsonSerializer.Serialize(this, options);
             File.WriteAllText(file, json);
         }
+
+        public void AddStep(StepConfig step)
+        {
+            if (Steps == null)
+            {
+                Steps = new List<StepConfig>();
+            }
+            Steps.Add(step);
+        }
     }
 }
