@@ -4,6 +4,7 @@ namespace Com.Scm.Upgrade.Config
     {
         None,
         Download,
+        Upload,
         Command,
         Launch,
         Zip,

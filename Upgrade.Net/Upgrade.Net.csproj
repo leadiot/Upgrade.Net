@@ -25,14 +25,23 @@
 		<PackageRepositoryUrl>https://github.com/leadiot/Upgrade.Net</PackageRepositoryUrl>
 		<PackageTags>upgrade,update,installer,dotnet,wpf,console</PackageTags>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<PackageIcon></PackageIcon>
+		<PackageIcon>logo128.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Content Include="E:\Nas.Net\备份\公司\Logo\soft\logo128.png" Link="Resources\logo128.png" />
+	  <Resource Include="Resources\logo.ico" />
+	  <Resource Include="Resources\logo128.png" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Resources\" />
+	  <None Update="docs\README.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	  <None Update="Resources\logo128.png">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
 	</ItemGroup>
 </Project>

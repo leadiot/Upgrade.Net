@@ -1,4 +1,4 @@
-﻿namespace Com.Scm.Upgrade.Config
+namespace Com.Scm.Upgrade.Config
 {
     public class StepConfig
     {
@@ -355,6 +355,17 @@
                 OldName = oldName,
                 NewName = newName,
                 Overwrite = overwrite
+            };
+        }
+
+        public static StepConfig NewUploadStep(string title, string url, string file)
+        {
+            return new StepConfig
+            {
+                Option = UpgradeOption.Upload,
+                Title = title,
+                Url = url,
+                File = file
             };
         }
     }

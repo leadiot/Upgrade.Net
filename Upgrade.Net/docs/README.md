@@ -158,6 +158,7 @@ StepConfig 提供了便捷的静态工厂方法创建步骤：
 | `NewDeleteDocStep(title, path)` | DeleteDoc | 创建删除文件步骤 |
 | `NewRenameDirStep(title, oldName, newName, overwrite)` | RenameDir | 创建重命名目录步骤 |
 | `NewRenameDocStep(title, oldName, newName, overwrite)` | RenameDoc | 创建重命名文件步骤 |
+| `NewCommandOnceStep(title, command, args, path)` | CommandOnce | 创建命令执行步骤（不等待完成） |
 
 ### 3.3 UpgradeOption（操作类型枚举）
 
@@ -168,7 +169,6 @@ public enum UpgradeOption
 {
     None,        // 无操作
     Download,    // 下载文件
-    Upload,      // 上传文件
     Command,     // 执行命令（等待完成）
     Launch,      // 启动程序（不等待）
     Zip,         // 压缩
@@ -301,13 +301,13 @@ public interface UpgradeView
 
 | 参数 | 适用操作 | 说明 |
 |------|----------|------|
-| url | Download, Upload | 下载/上传链接 |
-| file | Download, Upload | 保存路径和文件名/本地文件路径 |
+| url | Download | 下载链接 |
+| file | Download | 保存路径和文件名 |
 | source | Zip, Unzip, MoveDir, MoveDoc, CopyDir, CopyDoc | 源路径 |
 | destination | Zip, Unzip, MoveDir, MoveDoc, CopyDir, CopyDoc | 目标路径 |
 | path | CreateDir, CreateDoc, DeleteDir, DeleteDoc | 目录/文件路径 |
-| command | Command, Launch | 命令/程序路径 |
-| args | Command, Launch | 命令参数 |
+| command | Command, Launch, CommandOnce | 命令/程序路径 |
+| args | Command, Launch, CommandOnce | 命令参数 |
 | oldName | RenameDir, RenameDoc | 原名称 |
 | newName | RenameDir, RenameDoc | 新名称 |
 | overwrite | Unzip, MoveDir, MoveDoc, CopyDir, CopyDoc, CreateDoc, RenameDir, RenameDoc | 是否覆盖 |
@@ -318,7 +318,6 @@ public interface UpgradeView
 |----------|------|----------|
 | None | 无操作 | 无 |
 | Download | 从URL下载文件 | url, file |
-| Upload | 将本地文件上传到指定URL | url, file |
 | Command | 执行命令行命令（等待执行完成） | command, args(可选), path(可选) |
 | Launch | 启动外部程序（不等待执行完成） | command, args(可选), path(可选) |
 | Zip | 压缩文件/目录 | source, destination |
@@ -765,7 +764,7 @@ private static readonly HttpClient _HttpClient = new HttpClient { Timeout = Time
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | 1.0.0 | 2026-07-15 | 初始版本，支持16种操作类型 |
-| 1.0.1 | 2026-07-16 | 新增 Upload 操作，完善文档 |
+| 1.0.1 | 2026-07-15 | 新增 CommandOnce 操作，完善文档 |
 
 ---
 

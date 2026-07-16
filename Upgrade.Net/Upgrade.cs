@@ -33,6 +33,14 @@ namespace Com.Scm.Upgrade
                 Execute = ExecuteDownload
             };
 
+            _Actions[UpgradeOption.Upload] = new UpgradeAction
+            {
+                Option = UpgradeOption.Upload,
+                Title = "上传文件",
+                Description = "将本地文件上传到指定URL",
+                Execute = ExecuteUpload
+            };
+
             _Actions[UpgradeOption.Command] = new UpgradeAction
             {
                 Option = UpgradeOption.Command,
@@ -344,6 +352,59 @@ namespace Com.Scm.Upgrade
         private UpgradeResult ExecuteDownload(StepConfig step)
         {
             return ExecuteDownloadAsync(step).GetAwaiter().GetResult();
+        }
+
+        private async Task<UpgradeResult> ExecuteUploadAsync(StepConfig step)
+        {
+            if (string.IsNullOrWhiteSpace(step.Url))
+            {
+                return new UpgradeResult { Success = false, Message = "上传URL为空" };
+            }
+
+            if (string.IsNullOrWhiteSpace(step.File))
+            {
+                return new UpgradeResult { Success = false, Message = "本地文件路径为空" };
+            }
+
+            if (!File.Exists(step.File))
+            {
+                return new UpgradeResult { Success = false, Message = $"本地文件不存在：{step.File}" };
+            }
+
+            try
+            {
+                LogStepInfo("上传", $"从 {step.File} 上传到 {step.Url}");
+
+                using (var fileStream = File.OpenRead(step.File))
+                using (var content = new StreamContent(fileStream))
+                {
+                    var fileName = Path.GetFileName(step.File);
+                    content.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("form-data")
+                    {
+                        Name = "\"file\"",
+                        FileName = $"\"{fileName}\""
+                    };
+                    content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+
+                    var formData = new MultipartFormDataContent();
+                    formData.Add(content, "file", fileName);
+
+                    var response = await _HttpClient.PostAsync(step.Url, formData);
+                    response.EnsureSuccessStatusCode();
+
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    return new UpgradeResult { Success = true, Message = $"文件上传完成，响应：{responseContent.Substring(0, Math.Min(responseContent.Length, 100))}" };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new UpgradeResult { Success = false, Message = $"上传失败：{ex.Message}" };
+            }
+        }
+
+        private UpgradeResult ExecuteUpload(StepConfig step)
+        {
+            return ExecuteUploadAsync(step).GetAwaiter().GetResult();
         }
 
         private UpgradeResult ExecuteCommand(StepConfig step)
