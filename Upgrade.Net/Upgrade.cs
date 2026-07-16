@@ -477,7 +477,7 @@ namespace Com.Scm.Upgrade
                 {
                     FileName = exePath,
                     Arguments = $"{exeArgs} {step.Args ?? string.Empty}".Trim(),
-                    WorkingDirectory = string.IsNullOrEmpty(step.Path) ? AppDomain.CurrentDomain.BaseDirectory : step.Path,
+                    WorkingDirectory = string.IsNullOrEmpty(step.Path) ? AppContext.BaseDirectory : step.Path,
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     RedirectStandardOutput = true,
@@ -554,8 +554,9 @@ namespace Com.Scm.Upgrade
                 {
                     FileName = exePath,
                     Arguments = $"{exeArgs} {step.Args ?? string.Empty}".Trim(),
-                    WorkingDirectory = string.IsNullOrEmpty(step.Path) ? AppDomain.CurrentDomain.BaseDirectory : step.Path,
-                    UseShellExecute = true
+                    WorkingDirectory = string.IsNullOrEmpty(step.Path) ? AppContext.BaseDirectory : step.Path,
+                    UseShellExecute = true,
+                    CreateNoWindow = false
                 };
 
                 var process = System.Diagnostics.Process.Start(processStartInfo);
